@@ -1,0 +1,57 @@
+name: fitness_ai
+description: AI Fitness MVP - Track your workouts with computer vision
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  
+  # State Management
+  flutter_riverpod: ^2.6.1
+  
+  # Navigation
+  go_router: ^14.8.0
+  
+  # HTTP Client
+  dio: ^5.8.0
+  
+  # Secure Storage for JWT
+  flutter_secure_storage: ^9.2.4
+  
+  # UI
+  cupertino_icons: ^1.0.8
+  
+  # Camera
+  camera: ^0.11.0+2
+  
+  # ML Kit Pose Detection (on-device)
+  google_mlkit_pose_detection: ^0.12.0
+  
+  # Text-to-Speech for feedback
+  flutter_tts: ^4.2.0
+  
+  # Audio player for sound effects
+  audioplayers: ^6.1.0
+
+  # Persisted app settings
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  
+  # Assets
+  # Uncomment the line below after adding beep.mp3 to assets/sounds/
+  # See assets/sounds/README.md for instructions
+  # assets:
+  #   - assets/sounds/beep.mp3
