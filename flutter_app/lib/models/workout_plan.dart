@@ -10,7 +10,7 @@ class WorkoutPlan {
     required this.exerciseType,
     required this.goalMode,
     required this.targetValue,
-    this.preparationSeconds = 5,
+    this.preparationSeconds = 0,
   });
 
   final ExerciseType exerciseType;

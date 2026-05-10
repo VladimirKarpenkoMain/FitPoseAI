@@ -28,7 +28,6 @@ class AngleSmoother {
 class FrameStabilizer {
   final int requiredFrames;
   int _consecutiveCount = 0;
-  bool _lastCondition = false;
 
   FrameStabilizer({this.requiredFrames = 3});
 
@@ -39,29 +38,27 @@ class FrameStabilizer {
     } else {
       _consecutiveCount = 0;
     }
-    _lastCondition = condition;
     return _consecutiveCount >= requiredFrames;
   }
 
   void reset() {
     _consecutiveCount = 0;
-    _lastCondition = false;
   }
 }
 
 /// Utility class for pose geometry calculations
 class PoseGeometry {
   /// Calculates the angle between three points in degrees.
-  /// 
+  ///
   /// The angle is calculated at point B (the middle point):
   ///   A
   ///    \
   ///     B <- vertex of the angle
   ///    /
   ///   C
-  /// 
+  ///
   /// Formula: angle = arccos((BA · BC) / (|BA| * |BC|))
-  /// 
+  ///
   /// Returns the angle in degrees (0-180).
   static double getAngle(Point<double> a, Point<double> b, Point<double> c) {
     // Vectors BA and BC
@@ -82,7 +79,7 @@ class PoseGeometry {
 
     // Cosine of the angle
     double cosAngle = dotProduct / (magnitudeBA * magnitudeBC);
-    
+
     // Clamp value to [-1, 1] to avoid acos errors
     cosAngle = cosAngle.clamp(-1.0, 1.0);
 

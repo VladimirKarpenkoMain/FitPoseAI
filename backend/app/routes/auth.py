@@ -6,8 +6,14 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.user import UserCreate, UserResponse, Token
-from app.utils.auth import hash_password, verify_password, create_access_token
+from app.schemas.user import RefreshTokenRequest, UserCreate, UserResponse, Token
+from app.utils.auth import (
+    create_access_token,
+    create_refresh_token,
+    decode_refresh_token,
+    hash_password,
+    verify_password,
+)
 
 router = APIRouter(tags=["auth"])
 
@@ -51,4 +57,27 @@ def login(
 
     # JWT spec requires 'sub' to be a string
     access_token = create_access_token(data={"sub": str(user.id)})
-    return Token(access_token=access_token)
+    refresh_token = create_refresh_token(data={"sub": str(user.id)})
+    return Token(access_token=access_token, refresh_token=refresh_token)
+
+
+@router.post("/refresh", response_model=Token)
+def refresh_token(
+    refresh_data: RefreshTokenRequest,
+    db: Annotated[Session, Depends(get_db)]
+):
+    """Exchange a refresh token for a new access token."""
+    token_data = decode_refresh_token(refresh_data.refresh_token)
+    user = db.query(User).filter(User.id == token_data.user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate refresh token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token(data={"sub": str(user.id)})
+    return Token(
+        access_token=access_token,
+        refresh_token=refresh_data.refresh_token,
+    )

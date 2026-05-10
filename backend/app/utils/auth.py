@@ -31,16 +31,57 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(password_bytes, hashed_bytes)
 
 
-def create_access_token(data: dict) -> str:
-    """Create a JWT access token."""
+def _create_token(data: dict, expires_delta: timedelta, token_type: str) -> str:
+    """Create a typed JWT token."""
     to_encode = data.copy()
-    expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    expire = datetime.now(UTC) + expires_delta
+    to_encode.update({"exp": expire, "type": token_type})
     
     logger.debug(f"Creating token with data: {to_encode}")
     token = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     logger.info(f"Token created for user: {data.get('sub')}")
     return token
+
+
+def create_access_token(data: dict) -> str:
+    """Create a JWT access token."""
+    return _create_token(
+        data,
+        timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+        "access",
+    )
+
+
+def create_refresh_token(data: dict) -> str:
+    """Create a JWT refresh token."""
+    return _create_token(
+        data,
+        timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        "refresh",
+    )
+
+
+def decode_refresh_token(token: str) -> TokenData:
+    """Decode and validate a refresh token."""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate refresh token",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        if payload.get("type") != "refresh":
+            raise credentials_exception
+
+        user_id_str: str | None = payload.get("sub")
+        if user_id_str is None:
+            raise credentials_exception
+
+        return TokenData(user_id=int(user_id_str))
+    except (JWTError, ValueError) as e:
+        logger.error(f"Refresh token validation error: {e}")
+        raise credentials_exception
 
 
 def get_current_user(
@@ -59,6 +100,10 @@ def get_current_user(
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         logger.debug(f"Decoded payload: {payload}")
+
+        if payload.get("type", "access") != "access":
+            logger.warning("Non-access token used for authentication")
+            raise credentials_exception
         
         user_id_str: str | None = payload.get("sub")
         logger.debug(f"User ID from token: {user_id_str} (type: {type(user_id_str)})")

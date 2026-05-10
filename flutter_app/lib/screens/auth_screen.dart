@@ -96,7 +96,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                     Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.94),
+                        color: Colors.white.withValues(alpha: 0.94),
                         borderRadius: BorderRadius.circular(32),
                         border: Border.all(color: const Color(0xFFE2E8F0)),
                         boxShadow: const [

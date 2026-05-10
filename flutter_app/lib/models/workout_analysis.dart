@@ -31,7 +31,22 @@ enum TechniqueIssue {
   legsNotWideEnough('legs_not_wide_enough'),
   poorSynchronization('poor_synchronization'),
   failedReturnToClosed('failed_return_to_closed'),
-  leftRightAsymmetry('left_right_asymmetry');
+  leftRightAsymmetry('left_right_asymmetry'),
+  hipsTooHigh('hips_too_high'),
+  shouldersNotOverElbows('shoulders_not_over_elbows'),
+  unstablePosition('unstable_position'),
+  incompleteExtension('incomplete_extension'),
+  neckNotNeutral('neck_not_neutral'),
+  kneesBent('knees_bent'),
+  elbowAngleOutOfRange('elbow_angle_out_of_range'),
+  asymmetry('asymmetry'),
+  elbowsTooWide('elbows_too_wide'),
+  poorLockout('poor_lockout'),
+  excessiveBackLean('excessive_back_lean'),
+  barPathForward('bar_path_forward'),
+  dumbbellsForward('dumbbells_forward'),
+  kneeDrive('knee_drive'),
+  wristBentBack('wrist_bent_back');
 
   const TechniqueIssue(this.apiValue);
 
@@ -303,6 +318,90 @@ class RepAnalysis {
   }
 }
 
+class HoldAnalysisSummary {
+  final int samples;
+  final int durationSeconds;
+  final double validHoldTime;
+  final double invalidHoldTime;
+  final int averageQualityScore;
+  final String latestStatus;
+  final Map<String, double> latestMetrics;
+  final List<HoldErrorEvent> errorEvents;
+
+  const HoldAnalysisSummary({
+    required this.samples,
+    required this.durationSeconds,
+    this.validHoldTime = 0,
+    this.invalidHoldTime = 0,
+    required this.averageQualityScore,
+    required this.latestStatus,
+    this.latestMetrics = const <String, double>{},
+    this.errorEvents = const <HoldErrorEvent>[],
+  });
+
+  factory HoldAnalysisSummary.fromJson(Map<String, dynamic> json) {
+    return HoldAnalysisSummary(
+      samples: (json['samples'] as num?)?.toInt() ?? 0,
+      durationSeconds: (json['duration_seconds'] as num?)?.toInt() ?? 0,
+      validHoldTime: (json['valid_hold_time'] as num?)?.toDouble() ?? 0,
+      invalidHoldTime: (json['invalid_hold_time'] as num?)?.toDouble() ?? 0,
+      averageQualityScore:
+          (json['average_quality_score'] as num?)?.toInt() ?? 0,
+      latestStatus: json['latest_status'] as String? ?? '',
+      latestMetrics: _doubleMapFromJson(json['latest_metrics']),
+      errorEvents: (json['error_events'] as List<dynamic>? ?? const <dynamic>[])
+          .map((item) =>
+              HoldErrorEvent.fromJson(Map<String, dynamic>.from(item as Map)))
+          .toList(),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'samples': samples,
+      'duration_seconds': durationSeconds,
+      'valid_hold_time': validHoldTime,
+      'invalid_hold_time': invalidHoldTime,
+      'average_quality_score': averageQualityScore,
+      'latest_status': latestStatus,
+      'latest_metrics': latestMetrics,
+      'error_events': errorEvents.map((event) => event.toJson()).toList(),
+    };
+  }
+}
+
+class HoldErrorEvent {
+  final String type;
+  final String message;
+  final double startTime;
+  final double endTime;
+
+  const HoldErrorEvent({
+    required this.type,
+    required this.message,
+    required this.startTime,
+    required this.endTime,
+  });
+
+  factory HoldErrorEvent.fromJson(Map<String, dynamic> json) {
+    return HoldErrorEvent(
+      type: json['type'] as String? ?? '',
+      message: json['message'] as String? ?? '',
+      startTime: (json['start_time'] as num?)?.toDouble() ?? 0,
+      endTime: (json['end_time'] as num?)?.toDouble() ?? 0,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'type': type,
+      'message': message,
+      'start_time': startTime,
+      'end_time': endTime,
+    };
+  }
+}
+
 class WorkoutAnalysis {
   final String analysisVersion;
   final ExerciseView requiredView;
@@ -314,6 +413,7 @@ class WorkoutAnalysis {
   final List<RepEvent> repEvents;
   final List<PhaseTimelineEvent> phaseTimeline;
   final List<RepAnalysis> repAnalyses;
+  final HoldAnalysisSummary? holdSummary;
 
   const WorkoutAnalysis({
     this.analysisVersion = '1.0',
@@ -326,6 +426,7 @@ class WorkoutAnalysis {
     this.repEvents = const <RepEvent>[],
     this.phaseTimeline = const <PhaseTimelineEvent>[],
     required this.repAnalyses,
+    this.holdSummary,
   });
 
   factory WorkoutAnalysis.fromJson(Map<String, dynamic> json) {
@@ -361,6 +462,11 @@ class WorkoutAnalysis {
           .map((item) =>
               RepAnalysis.fromJson(Map<String, dynamic>.from(item as Map)))
           .toList(),
+      holdSummary: json['hold_summary'] == null
+          ? null
+          : HoldAnalysisSummary.fromJson(
+              Map<String, dynamic>.from(json['hold_summary'] as Map),
+            ),
     );
   }
 
@@ -376,6 +482,7 @@ class WorkoutAnalysis {
       'rep_events': repEvents.map((event) => event.toJson()).toList(),
       'phase_timeline': phaseTimeline.map((event) => event.toJson()).toList(),
       'rep_analyses': repAnalyses.map((rep) => rep.toJson()).toList(),
+      if (holdSummary != null) 'hold_summary': holdSummary!.toJson(),
     };
   }
 }
@@ -392,7 +499,23 @@ extension TechniqueIssueSeverity on TechniqueIssue {
       case TechniqueIssue.failedReturnToClosed:
         return IssueSeverity.major;
       case TechniqueIssue.poorSynchronization:
+      case TechniqueIssue.unstablePosition:
         return IssueSeverity.minor;
+      case TechniqueIssue.shouldersNotOverElbows:
+      case TechniqueIssue.hipsTooHigh:
+      case TechniqueIssue.incompleteExtension:
+      case TechniqueIssue.neckNotNeutral:
+      case TechniqueIssue.kneesBent:
+      case TechniqueIssue.elbowAngleOutOfRange:
+      case TechniqueIssue.asymmetry:
+      case TechniqueIssue.elbowsTooWide:
+      case TechniqueIssue.poorLockout:
+      case TechniqueIssue.excessiveBackLean:
+      case TechniqueIssue.barPathForward:
+      case TechniqueIssue.dumbbellsForward:
+      case TechniqueIssue.kneeDrive:
+      case TechniqueIssue.wristBentBack:
+        return IssueSeverity.moderate;
       default:
         return IssueSeverity.moderate;
     }

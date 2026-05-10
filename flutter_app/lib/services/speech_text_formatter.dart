@@ -18,6 +18,46 @@ String repCountSpeechText(int count, String languageCode) {
   return _numberToEnglishWords(count);
 }
 
+String startCountdownSpeechText(int seconds, String languageCode) {
+  if (languageCode.startsWith('ru')) {
+    return 'Старт через ${_russianCountdownNumber(seconds)} '
+        '${_russianSecondUnit(seconds)}';
+  }
+
+  final numberText = _numberToEnglishWords(seconds).toLowerCase();
+  final unit = seconds == 1 ? 'second' : 'seconds';
+  return 'Start in $numberText $unit';
+}
+
+String _russianCountdownNumber(int number) {
+  switch (number) {
+    case 1:
+      return 'одну';
+    case 2:
+      return 'две';
+    default:
+      return _numberToRussianWords(number).toLowerCase();
+  }
+}
+
+String _russianSecondUnit(int number) {
+  final lastTwoDigits = number % 100;
+  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+    return 'секунд';
+  }
+
+  switch (number % 10) {
+    case 1:
+      return 'секунду';
+    case 2:
+    case 3:
+    case 4:
+      return 'секунды';
+    default:
+      return 'секунд';
+  }
+}
+
 String _numberToEnglishWords(int number) {
   if (number <= 0) {
     return 'Zero';

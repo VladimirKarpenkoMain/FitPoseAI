@@ -51,8 +51,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
-    expect(find.text('Начать сейчас'), findsOneWidget);
-    expect(find.text('Эта неделя'), findsOneWidget);
+    expect(find.text('НАЧАТЬ ТРЕНИРОВКУ'), findsOneWidget);
+    expect(find.text('Эта неделя'), findsNothing);
   });
 }
 

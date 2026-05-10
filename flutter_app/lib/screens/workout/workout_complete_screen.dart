@@ -53,7 +53,7 @@ class WorkoutCompleteScreen extends StatelessWidget {
               ),
               const Spacer(),
               ElevatedButton(
-                onPressed: () => context.go('/analysis', extra: args.workout),
+                onPressed: () => context.push('/analysis', extra: args.workout),
                 child: Text(l10n.viewAnalysis),
               ),
               const SizedBox(height: 12),

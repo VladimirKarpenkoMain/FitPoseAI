@@ -66,6 +66,7 @@ class LiveIssueTrigger {
 
 abstract class ExerciseProfile {
   String get id;
+  bool get isHoldBased => false;
   ExerciseView get requiredView;
   RepTrackingConfig get trackingConfig;
   Map<String, dynamic> get thresholds;

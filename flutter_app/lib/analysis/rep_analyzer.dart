@@ -162,9 +162,7 @@ class RepAnalyzer {
       issueEvents.add(event);
     }
 
-    final isFinishPhase = config.finishPhases.contains(_phase);
-    final finishObserved =
-        isFinishPhase || config.finishPhases.contains(detectedPhase);
+    final finishObserved = config.finishPhases.contains(detectedPhase);
     if (attempt.visitedTargetPhase && finishObserved) {
       _completionFrames++;
       if (attempt.frameCount >= config.minRepFrames &&

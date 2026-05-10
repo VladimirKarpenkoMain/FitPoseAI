@@ -1,4 +1,7 @@
 enum Joint {
+  nose,
+  leftEar,
+  rightEar,
   leftShoulder,
   rightShoulder,
   leftElbow,

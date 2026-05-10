@@ -21,6 +21,7 @@ class WorkoutFrameProcessor {
   final ReadinessEvaluator readinessEvaluator;
   final AnalyzeWorkoutFrame analyzeFrame;
   final PoseTrackingStabilizer _stabilizer;
+  bool _hasStartedTracking = false;
 
   WorkoutFrameResult process({
     required PoseFrame? rawFrame,
@@ -32,10 +33,14 @@ class WorkoutFrameProcessor {
       frame: rawFrame,
       elapsed: elapsed,
     );
-    final readiness = readinessEvaluator.evaluate(
+    final evaluatedReadiness = readinessEvaluator.evaluate(
       frame: stabilizedFrame,
       elapsedSeconds: elapsed.inSeconds,
     );
+    final readiness = _readinessForSession(evaluatedReadiness);
+    if (readiness.canStartTracking) {
+      _hasStartedTracking = true;
+    }
     if (stabilizedFrame == null) {
       final result = WorkoutFrameResult(
         readiness: readiness,
@@ -71,5 +76,26 @@ class WorkoutFrameProcessor {
 
   void reset() {
     _stabilizer.reset();
+    _hasStartedTracking = false;
+  }
+
+  ReadinessResult _readinessForSession(ReadinessResult readiness) {
+    if (!_hasStartedTracking || readiness.canStartTracking) {
+      return readiness;
+    }
+
+    switch (readiness.state) {
+      case ReadinessState.startPoseCheck:
+      case ReadinessState.countdownReady:
+        return const ReadinessResult(
+          state: ReadinessState.activeTracking,
+          canStartTracking: true,
+          remainingSeconds: 0,
+        );
+      case ReadinessState.viewAlignment:
+      case ReadinessState.bodyVisibilityCheck:
+      case ReadinessState.activeTracking:
+        return readiness;
+    }
   }
 }

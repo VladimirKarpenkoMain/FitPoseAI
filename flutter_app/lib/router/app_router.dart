@@ -8,8 +8,7 @@ import '../models/workout.dart';
 import '../models/workout_plan.dart';
 import '../providers/auth_provider.dart';
 import '../screens/auth_screen.dart';
-import '../screens/history_screen.dart';
-import '../screens/home_screen.dart';
+import '../screens/main_scaffold.dart';
 import '../screens/settings_screen.dart';
 import '../screens/workout/workout_analysis_screen.dart';
 import '../screens/workout/workout_complete_screen.dart';
@@ -50,12 +49,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const HomeScreen(),
+        builder: (context, state) => const MainScaffold(currentIndex: 0),
       ),
       GoRoute(
         path: '/history',
         name: 'history',
-        builder: (context, state) => const HistoryScreen(),
+        builder: (context, state) => const MainScaffold(currentIndex: 1),
       ),
       GoRoute(
         path: '/settings',
@@ -85,7 +84,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'workout_setup',
         builder: (context, state) {
           final exerciseTypeParam = state.pathParameters['exerciseType'];
-          final exerciseType = ExerciseTypeExtension.fromString(exerciseTypeParam);
+          final exerciseType =
+              ExerciseTypeExtension.fromString(exerciseTypeParam);
           return WorkoutSetupScreen(exerciseType: exerciseType);
         },
       ),
@@ -94,7 +94,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'workout',
         builder: (context, state) {
           final exerciseTypeParam = state.pathParameters['exerciseType'];
-          final exerciseType = ExerciseTypeExtension.fromString(exerciseTypeParam);
+          final exerciseType =
+              ExerciseTypeExtension.fromString(exerciseTypeParam);
           final plan = state.extra is WorkoutPlan
               ? state.extra! as WorkoutPlan
               : WorkoutPlan(

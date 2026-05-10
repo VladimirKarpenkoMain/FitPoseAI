@@ -96,4 +96,40 @@ void main() {
       108,
     );
   });
+
+  test('Workout parses hold summary analysis payload', () {
+    final workout = Workout.fromJson({
+      'id': 18,
+      'user_id': 4,
+      'exercise_type': 'plank',
+      'rep_count': 0,
+      'date': '2026-05-05T10:30:00Z',
+      'average_quality_score': 78,
+      'analysis': {
+        'analysis_version': '2.0',
+        'required_view': 'side',
+        'readiness_time_seconds': 5,
+        'dominant_issues': ['hip_sag'],
+        'rep_analyses': [],
+        'hold_summary': {
+          'samples': 2,
+          'duration_seconds': 2,
+          'average_quality_score': 78,
+          'latest_status': 'hip_sag',
+          'latest_metrics': {'hold_body_line_angle': 154},
+        },
+      },
+    });
+
+    expect(workout.analysis!.holdSummary, isNotNull);
+    expect(workout.analysis!.holdSummary!.samples, 2);
+    expect(workout.analysis!.holdSummary!.durationSeconds, 2);
+    expect(workout.analysis!.holdSummary!.averageQualityScore, 78);
+    expect(workout.analysis!.holdSummary!.latestStatus, 'hip_sag');
+    expect(
+      workout.toJson()['analysis']['hold_summary']['latest_metrics']
+          ['hold_body_line_angle'],
+      154,
+    );
+  });
 }

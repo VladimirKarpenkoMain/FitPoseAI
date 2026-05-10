@@ -1,17 +1,7 @@
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 
-/// Result of processing a pose, containing count and feedback
-class CounterResult {
-  final int count;
-  final String feedback;
-  final bool countIncremented;
-
-  CounterResult({
-    required this.count,
-    required this.feedback,
-    this.countIncremented = false,
-  });
-}
+export 'counter_result.dart';
+import 'counter_result.dart';
 
 /// Abstract base class for exercise counters
 /// All exercise counters must implement this interface

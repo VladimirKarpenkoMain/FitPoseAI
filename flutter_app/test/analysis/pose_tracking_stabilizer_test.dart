@@ -7,8 +7,8 @@ void main() {
     final stabilizer = PoseTrackingStabilizer(
       missingPoseTolerance: const Duration(milliseconds: 300),
     );
-    final frame = PoseFrame(
-      landmarks: const {
+    const frame = PoseFrame(
+      landmarks: {
         Joint.leftShoulder: FrameLandmark(x: 0, y: 0, confidence: 1),
       },
     );
@@ -30,8 +30,8 @@ void main() {
     final stabilizer = PoseTrackingStabilizer(
       missingPoseTolerance: const Duration(milliseconds: 300),
     );
-    final frame = PoseFrame(
-      landmarks: const {
+    const frame = PoseFrame(
+      landmarks: {
         Joint.leftShoulder: FrameLandmark(x: 0, y: 0, confidence: 1),
       },
     );

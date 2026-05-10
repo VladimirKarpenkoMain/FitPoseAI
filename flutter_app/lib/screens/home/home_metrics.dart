@@ -20,14 +20,15 @@ WeeklyProgressSummary buildWeeklyProgress(
   List<Workout> workouts, {
   required DateTime now,
 }) {
-  final weekStart = DateTime.utc(
-    now.toUtc().year,
-    now.toUtc().month,
-    now.toUtc().day,
-  ).subtract(Duration(days: now.toUtc().weekday - 1));
+  final localNow = now.toLocal();
+  final weekStart = DateTime(
+    localNow.year,
+    localNow.month,
+    localNow.day,
+  ).subtract(Duration(days: localNow.weekday - 1));
 
   final weeklyWorkouts = workouts
-      .where((workout) => !workout.date.toUtc().isBefore(weekStart))
+      .where((workout) => !workout.date.toLocal().isBefore(weekStart))
       .toList();
 
   final qualityScores = weeklyWorkouts
@@ -44,10 +45,13 @@ WeeklyProgressSummary buildWeeklyProgress(
 
   return WeeklyProgressSummary(
     weeklySessions: weeklyWorkouts.length,
-    weeklyReps: weeklyWorkouts.fold<int>(0, (sum, workout) => sum + workout.repCount),
+    weeklyReps:
+        weeklyWorkouts.fold<int>(0, (sum, workout) => sum + workout.repCount),
     averageQualityScore: qualityScores.isEmpty
         ? null
-        : (qualityScores.reduce((left, right) => left + right) / qualityScores.length).round(),
+        : (qualityScores.reduce((left, right) => left + right) /
+                qualityScores.length)
+            .round(),
     latestWorkout: latestWorkout,
   );
 }

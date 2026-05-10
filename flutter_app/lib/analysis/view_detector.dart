@@ -10,6 +10,9 @@ class ViewDetectionResult {
 }
 
 class ViewDetector {
+  static const double _sideWidthRatio = 0.18;
+  static const double _frontWidthRatio = 0.28;
+
   const ViewDetector();
 
   ViewDetectionResult detect(PoseFrame frame) {
@@ -18,18 +21,36 @@ class ViewDetector {
     final leftHip = frame[Joint.leftHip];
     final rightHip = frame[Joint.rightHip];
 
-    if (leftShoulder == null || rightShoulder == null || leftHip == null || rightHip == null) {
+    if (leftShoulder == null ||
+        rightShoulder == null ||
+        leftHip == null ||
+        rightHip == null) {
       return const ViewDetectionResult(ExerciseView.unknown, 0);
     }
 
-    final shoulderWidth = PoseMetrics.horizontalDistance(leftShoulder, rightShoulder);
+    final shoulderWidth =
+        PoseMetrics.horizontalDistance(leftShoulder, rightShoulder);
     final hipWidth = PoseMetrics.horizontalDistance(leftHip, rightHip);
     final averageWidth = (shoulderWidth + hipWidth) / 2;
+    final leftTorsoHeight = PoseMetrics.verticalDistance(leftShoulder, leftHip);
+    final rightTorsoHeight =
+        PoseMetrics.verticalDistance(rightShoulder, rightHip);
+    final averageTorsoHeight = (leftTorsoHeight + rightTorsoHeight) / 2;
 
-    if (averageWidth >= 50) {
-      return const ViewDetectionResult(ExerciseView.side, 0.85);
+    if (averageTorsoHeight <= 0) {
+      return const ViewDetectionResult(ExerciseView.unknown, 0);
     }
 
-    return const ViewDetectionResult(ExerciseView.front, 0.8);
+    final widthRatio = averageWidth / averageTorsoHeight;
+
+    if (widthRatio >= _frontWidthRatio) {
+      return const ViewDetectionResult(ExerciseView.front, 0.85);
+    }
+
+    if (widthRatio <= _sideWidthRatio) {
+      return const ViewDetectionResult(ExerciseView.side, 0.8);
+    }
+
+    return const ViewDetectionResult(ExerciseView.unknown, 0.45);
   }
 }

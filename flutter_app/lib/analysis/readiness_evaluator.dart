@@ -25,6 +25,8 @@ class ReadinessResult {
 }
 
 class ReadinessEvaluator {
+  static const int _viewSwitchDwellFrames = 3;
+
   ReadinessEvaluator({
     required this.requiredView,
     required this.countdownSeconds,
@@ -40,6 +42,9 @@ class ReadinessEvaluator {
   final bool enforceReadinessChecks;
   final ViewDetector _viewDetector = const ViewDetector();
   int? _countdownAnchorSeconds;
+  ExerciseView? _stableDetectedView;
+  ExerciseView? _pendingDetectedView;
+  int _pendingDetectedViewFrames = 0;
 
   ReadinessResult evaluate({
     PoseFrame? frame,
@@ -59,21 +64,6 @@ class ReadinessEvaluator {
       );
     }
 
-    final detectedView = _viewDetector.detect(frame);
-    final viewSatisfied = _isViewSatisfied(detectedView.view) ||
-        (requiredView == ExerciseView.side && _hasSingleSideFallback(frame));
-    if (!viewSatisfied) {
-      _countdownAnchorSeconds = null;
-      return ReadinessResult(
-        state: ReadinessState.viewAlignment,
-        canStartTracking: false,
-        remainingSeconds: countdownSeconds,
-        blocker: requiredView == ExerciseView.front
-            ? 'Face the camera'
-            : 'Turn to your side',
-      );
-    }
-
     final missingVisibilityBlocker = _missingVisibilityBlocker(frame);
     if (missingVisibilityBlocker != null) {
       _countdownAnchorSeconds = null;
@@ -82,6 +72,19 @@ class ReadinessEvaluator {
         canStartTracking: false,
         remainingSeconds: countdownSeconds,
         blocker: missingVisibilityBlocker,
+      );
+    }
+
+    final rawDetectedView = _detectViewWithFallback(frame);
+    final detectedView = _smoothedView(rawDetectedView);
+    final viewSatisfied = _isViewSatisfied(detectedView);
+    if (!viewSatisfied) {
+      _countdownAnchorSeconds = null;
+      return ReadinessResult(
+        state: ReadinessState.viewAlignment,
+        canStartTracking: false,
+        remainingSeconds: countdownSeconds,
+        blocker: _viewBlockerFor(detectedView),
       );
     }
 
@@ -141,12 +144,68 @@ class ReadinessEvaluator {
     return detectedView == requiredView;
   }
 
+  ExerciseView _detectViewWithFallback(PoseFrame frame) {
+    final detectedView = _viewDetector.detect(frame).view;
+    if (requiredView == ExerciseView.side &&
+        detectedView == ExerciseView.unknown &&
+        _hasSingleSideFallback(frame)) {
+      return ExerciseView.side;
+    }
+    return detectedView;
+  }
+
+  ExerciseView _smoothedView(ExerciseView detectedView) {
+    if (detectedView == ExerciseView.unknown) {
+      _pendingDetectedView = null;
+      _pendingDetectedViewFrames = 0;
+      return _stableDetectedView ?? ExerciseView.unknown;
+    }
+
+    final stableView = _stableDetectedView;
+    if (stableView == null) {
+      _stableDetectedView = detectedView;
+      return detectedView;
+    }
+
+    if (detectedView == stableView) {
+      _pendingDetectedView = null;
+      _pendingDetectedViewFrames = 0;
+      return stableView;
+    }
+
+    if (_pendingDetectedView != detectedView) {
+      _pendingDetectedView = detectedView;
+      _pendingDetectedViewFrames = 1;
+      return stableView;
+    }
+
+    _pendingDetectedViewFrames++;
+    if (_pendingDetectedViewFrames < _viewSwitchDwellFrames) {
+      return stableView;
+    }
+
+    _stableDetectedView = detectedView;
+    _pendingDetectedView = null;
+    _pendingDetectedViewFrames = 0;
+    return detectedView;
+  }
+
   bool _hasSingleSideFallback(PoseFrame frame) {
     final hasLeftSide =
         frame.hasVisible(Joint.leftShoulder) && frame.hasVisible(Joint.leftHip);
     final hasRightSide = frame.hasVisible(Joint.rightShoulder) &&
         frame.hasVisible(Joint.rightHip);
-    return hasLeftSide || hasRightSide;
+    return hasLeftSide != hasRightSide;
+  }
+
+  String _viewBlockerFor(ExerciseView detectedView) {
+    if (requiredView == ExerciseView.front) {
+      return 'Face the camera';
+    }
+    if (detectedView == ExerciseView.unknown) {
+      return 'Keep one full side visible';
+    }
+    return 'Turn to your side';
   }
 
   String? _missingVisibilityBlocker(PoseFrame frame) {

@@ -14,12 +14,12 @@ class WorkoutLiveHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
         child: Row(
           children: [
-            IconButton(
+            _HeaderButton(
               onPressed: onBack,
-              icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+              icon: Icons.arrow_back_rounded,
             ),
             Expanded(
               child: Text(
@@ -32,8 +32,38 @@ class WorkoutLiveHeader extends StatelessWidget {
                 ),
               ),
             ),
-            const SizedBox(width: 48),
+            const SizedBox(width: 44),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HeaderButton extends StatelessWidget {
+  const _HeaderButton({
+    required this.onPressed,
+    required this.icon,
+  });
+
+  final VoidCallback onPressed;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.black.withValues(alpha: 0.42),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+      ),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(16),
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Icon(icon, color: Colors.white),
         ),
       ),
     );

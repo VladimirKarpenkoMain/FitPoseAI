@@ -71,7 +71,12 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
         averageQualityScore: averageQualityScore,
         analysis: analysis,
       );
-      await fetchWorkouts();
+      state = state.copyWith(
+        workouts: [
+          workout,
+          ...state.workouts.where((item) => item.id != workout.id),
+        ],
+      );
       return workout;
     } catch (e) {
       rethrow;
@@ -79,7 +84,8 @@ class WorkoutNotifier extends StateNotifier<WorkoutState> {
   }
 }
 
-final workoutProvider = StateNotifierProvider<WorkoutNotifier, WorkoutState>((ref) {
+final workoutProvider =
+    StateNotifierProvider<WorkoutNotifier, WorkoutState>((ref) {
   final apiService = ref.watch(apiServiceProvider);
   return WorkoutNotifier(apiService);
 });

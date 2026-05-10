@@ -8,5 +8,6 @@ class ApiConfig {
   // Endpoints
   static const String register = '/register';
   static const String login = '/login';
+  static const String refresh = '/refresh';
   static const String workouts = '/workouts';
 }

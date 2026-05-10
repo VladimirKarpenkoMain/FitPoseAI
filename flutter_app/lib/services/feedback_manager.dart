@@ -3,12 +3,13 @@ import 'dart:io' show Platform;
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
+import 'feedback_output.dart';
 import 'speech_text_formatter.dart';
 
 /// Singleton class that manages audio feedback for exercises
 /// Provides Text-to-Speech for corrections and rep counts,
 /// and sound effects for successful reps
-class FeedbackManager {
+class FeedbackManager implements FeedbackOutput {
   // Singleton instance
   static final FeedbackManager _instance = FeedbackManager._internal();
 
@@ -16,9 +17,7 @@ class FeedbackManager {
     return _instance;
   }
 
-  FeedbackManager._internal() {
-    _initializeTTS();
-  }
+  FeedbackManager._internal();
 
   // TTS instance
   final FlutterTts _flutterTts = FlutterTts();
@@ -41,6 +40,8 @@ class FeedbackManager {
   // Language settings
   String _currentLanguage = 'en-US';
   bool _isInitialized = false;
+  bool _handlersConfigured = false;
+  Future<void>? _initializationFuture;
 
   /// Initialize TTS with proper settings
   Future<void> _initializeTTS() async {
@@ -48,14 +49,29 @@ class FeedbackManager {
       return;
     }
 
-    try {
-      await _flutterTts.setLanguage(_currentLanguage);
-      await _flutterTts.setSpeechRate(0.5);
-      await _flutterTts.setVolume(1.0);
-      await _flutterTts.setPitch(1.0);
+    final pendingInitialization = _initializationFuture;
+    if (pendingInitialization != null) {
+      await pendingInitialization;
+      return;
+    }
 
+    final initialization = _doInitializeTTS();
+    _initializationFuture = initialization;
+    try {
+      await initialization;
+    } finally {
+      _initializationFuture = null;
+    }
+  }
+
+  Future<void> _doInitializeTTS() async {
+    try {
       if (Platform.isAndroid) {
-        await _flutterTts.setEngine('com.google.android.tts');
+        try {
+          await _flutterTts.setEngine('com.google.android.tts');
+        } catch (e) {
+          print('Google TTS engine not available - using default engine: $e');
+        }
       } else if (Platform.isIOS) {
         await _flutterTts.setSharedInstance(true);
         await _flutterTts.setIosAudioCategory(
@@ -70,26 +86,47 @@ class FeedbackManager {
         );
       }
 
-      _flutterTts.setStartHandler(() {
-        _isSpeaking = true;
-      });
-
-      _flutterTts.setCompletionHandler(() {
-        _isSpeaking = false;
-      });
-
-      _flutterTts.setErrorHandler((msg) {
-        _isSpeaking = false;
-        print('TTS Error: $msg');
-      });
-
-      _flutterTts.setCancelHandler(() {
-        _isSpeaking = false;
-      });
-
+      await _applyCurrentLanguage();
+      await _flutterTts.setSpeechRate(0.5);
+      await _flutterTts.setVolume(1.0);
+      await _flutterTts.setPitch(1.0);
+      _configureHandlers();
       _isInitialized = true;
     } catch (e) {
       print('Error initializing TTS: $e');
+    }
+  }
+
+  void _configureHandlers() {
+    if (_handlersConfigured) {
+      return;
+    }
+
+    _flutterTts.setStartHandler(() {
+      _isSpeaking = true;
+    });
+
+    _flutterTts.setCompletionHandler(() {
+      _isSpeaking = false;
+    });
+
+    _flutterTts.setErrorHandler((msg) {
+      _isSpeaking = false;
+      print('TTS Error: $msg');
+    });
+
+    _flutterTts.setCancelHandler(() {
+      _isSpeaking = false;
+    });
+
+    _handlersConfigured = true;
+  }
+
+  Future<void> _applyCurrentLanguage() async {
+    try {
+      await _flutterTts.setLanguage(_currentLanguage);
+    } catch (e) {
+      print('Error setting TTS language $_currentLanguage: $e');
     }
   }
 
@@ -102,10 +139,12 @@ class FeedbackManager {
   ///
   /// [text] The text to speak
   /// [priority] If true, cancels current speech immediately
+  @override
   Future<void> speak(String text, {bool priority = false}) async {
     if (!_isInitialized) {
       await _initializeTTS();
     }
+    await _applyCurrentLanguage();
 
     if (_lastSpokenText == text && !priority) {
       return;
@@ -137,12 +176,24 @@ class FeedbackManager {
   }
 
   /// Speaks a rep count number using the active TTS language.
-  Future<void> speakRepCount(int count) async {
+  @override
+  Future<void> speakRepCount(int count, {bool priority = false}) async {
     final text = repCountSpeechText(count, _currentLanguage);
-    await speak(text, priority: true);
+    await speak(text, priority: priority);
+  }
+
+  /// Speaks the remaining preparation countdown using the active TTS language.
+  @override
+  Future<void> speakStartCountdown(
+    int remainingSeconds, {
+    bool priority = false,
+  }) async {
+    final text = startCountdownSpeechText(remainingSeconds, _currentLanguage);
+    await speak(text, priority: priority);
   }
 
   /// Plays a beep sound for successful rep completion
+  @override
   Future<void> playBeep() async {
     try {
       await _audioPlayer.play(AssetSource('sounds/beep.mp3'));
@@ -152,6 +203,7 @@ class FeedbackManager {
   }
 
   /// Stops any currently playing speech
+  @override
   Future<void> stop() async {
     if (_isSpeaking) {
       await _flutterTts.stop();
@@ -164,7 +216,10 @@ class FeedbackManager {
   /// [languageCode] Language code (e.g., 'en-US', 'ru-RU')
   Future<void> setLanguage(String languageCode) async {
     _currentLanguage = languageCode;
-    await _flutterTts.setLanguage(languageCode);
+    if (!_isInitialized) {
+      await _initializeTTS();
+    }
+    await _applyCurrentLanguage();
   }
 
   Future<void> setEnglish() async {

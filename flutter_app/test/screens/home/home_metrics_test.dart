@@ -3,7 +3,8 @@ import 'package:fitness_ai/screens/home/home_metrics.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('buildWeeklyProgress returns weekly totals and latest workout summary', () {
+  test('buildWeeklyProgress returns weekly totals and latest workout summary',
+      () {
     final workouts = [
       Workout(
         id: 3,
@@ -41,5 +42,25 @@ void main() {
     expect(summary.averageQualityScore, 78);
     expect(summary.latestWorkout?.id, 3);
     expect(summary.hasData, isTrue);
+  });
+
+  test('buildWeeklyProgress includes workouts from the current local week', () {
+    final workouts = [
+      Workout(
+        id: 1,
+        userId: 1,
+        exerciseType: 'squat',
+        repCount: 15,
+        date: DateTime(2026, 5, 4, 0, 30),
+      ),
+    ];
+
+    final summary = buildWeeklyProgress(
+      workouts,
+      now: DateTime(2026, 5, 5, 12),
+    );
+
+    expect(summary.weeklySessions, 1);
+    expect(summary.weeklyReps, 15);
   });
 }

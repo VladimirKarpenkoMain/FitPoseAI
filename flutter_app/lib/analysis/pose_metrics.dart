@@ -87,4 +87,24 @@ class PoseMetrics {
     }
     return total / count;
   }
+
+  static double normalizedOffsetFromLine({
+    required FrameLandmark lineStart,
+    required FrameLandmark point,
+    required FrameLandmark lineEnd,
+  }) {
+    final lineLength = distance(lineStart, lineEnd);
+    if (lineLength == 0) {
+      return 0;
+    }
+
+    final lineDeltaX = lineEnd.x - lineStart.x;
+    if (lineDeltaX.abs() < 0.0001) {
+      return (point.y - ((lineStart.y + lineEnd.y) / 2)) / lineLength;
+    }
+
+    final progress = (point.x - lineStart.x) / lineDeltaX;
+    final lineY = lineStart.y + (lineEnd.y - lineStart.y) * progress;
+    return (point.y - lineY) / lineLength;
+  }
 }

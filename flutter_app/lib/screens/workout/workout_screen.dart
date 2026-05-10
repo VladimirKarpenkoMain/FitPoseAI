@@ -11,8 +11,8 @@ import '../../models/exercise_type.dart';
 import '../../models/workout_analysis.dart';
 import '../../models/workout_plan.dart';
 import '../../models/workout_session_progress.dart';
+import '../../providers/feedback_provider.dart';
 import '../../providers/workout_provider.dart';
-import '../../services/feedback_manager.dart';
 import '../../services/workout_feedback_coordinator.dart';
 import '../../services/workout_session_recorder.dart';
 import 'pose_detector_view.dart';
@@ -66,7 +66,9 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
       requiredView: _workoutAnalyzer.profile.requiredView,
       thresholds: _workoutAnalyzer.profile.thresholds,
     );
-    _feedbackCoordinator = WorkoutFeedbackCoordinator(FeedbackManager());
+    _feedbackCoordinator = WorkoutFeedbackCoordinator(
+      ref.read(feedbackManagerWithLocaleProvider),
+    );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -93,18 +95,26 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
   }
 
   void _onAnalysisFrame(WorkoutFrameResult result) {
+    final l10n = AppLocalizations.of(context);
     final shouldStartActive = _phase == WorkoutSessionPhase.preparation &&
         result.readiness.canStartTracking;
     final repUpdate = result.repUpdate;
+    final holdUpdate = result.holdUpdate;
 
     if (repUpdate != null) {
       _sessionRecorder.recordRepUpdate(repUpdate);
+      unawaited(_feedbackCoordinator.processRepUpdate(repUpdate));
     }
+    if (holdUpdate != null) {
+      _sessionRecorder.recordHoldUpdate(holdUpdate);
+    }
+
+    _handleStartCountdownSpeech(result.readiness);
 
     setState(() {
       _readiness = result.readiness;
       _systemStatus = result.systemStatus;
-      _liveCue = result.liveCue ?? '';
+      _liveCue = _liveAnalysisCue(l10n, result);
       if (repUpdate?.countIncremented ?? false) {
         _repCount = repUpdate!.repCount;
         _lastRepAnalysis = repUpdate.repAnalysis;
@@ -120,6 +130,23 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
         _progress.hasReachedGoal) {
       _completeGoalWorkout();
     }
+  }
+
+  void _handleStartCountdownSpeech(ReadinessResult readiness) {
+    if (_phase != WorkoutSessionPhase.preparation) {
+      return;
+    }
+
+    if (readiness.state == ReadinessState.countdownReady) {
+      unawaited(
+        _feedbackCoordinator.announceStartCountdown(
+          readiness.remainingSeconds,
+        ),
+      );
+      return;
+    }
+
+    _feedbackCoordinator.resetStartCountdown();
   }
 
   void _startActivePhase() {
@@ -187,10 +214,10 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
       final workout = await ref.read(workoutProvider.notifier).createWorkout(
             exerciseType: _exerciseType.apiValue,
             repCount: _repCount,
-            averageQualityScore: _sessionRecorder.hasRepAnalyses
+            averageQualityScore: _sessionRecorder.hasAnalysis
                 ? _sessionRecorder.averageQualityScore
                 : null,
-            analysis: _sessionRecorder.hasRepAnalyses
+            analysis: _sessionRecorder.hasAnalysis
                 ? _sessionRecorder.buildAnalysisPayload(
                     readinessTimeSeconds: widget.plan.preparationSeconds,
                   )
@@ -238,11 +265,17 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
       case 'Turn to your side':
         return l10n.turnToSide;
       case 'Keep one full side visible':
-        return l10n.turnToSide;
+        return l10n.keepFullSideVisible;
       case 'Hold the start position':
-        return l10n.holdStartPose;
+        return l10n.holdStartPoseToStart;
       case 'Tracking active':
         return l10n.trackingActive;
+      case 'holding_good':
+        return l10n.good;
+      case 'hip_sag':
+      case 'hips_too_high':
+      case 'lost_position':
+        return l10n.techniqueIssue(status);
       case 'Get ready':
         return l10n.getReady;
       default:
@@ -264,7 +297,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
         return l10n.positionYourselfInFrame;
       }
       if (readiness.state == ReadinessState.countdownReady) {
-        return l10n.getReadyCountdown(readiness.remainingSeconds);
+        return l10n.holdStillCountdown(readiness.remainingSeconds);
       }
       return _translateSystemStatus(l10n, _systemStatus);
     }
@@ -291,6 +324,52 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     return l10n.repQualitySummary(_lastRepAnalysis!.qualityScore, issueText);
   }
 
+  String _liveAnalysisCue(
+    AppLocalizations l10n,
+    WorkoutFrameResult result,
+  ) {
+    final holdUpdate = result.holdUpdate;
+    if (holdUpdate != null) {
+      if (holdUpdate.issues.isEmpty) {
+        return l10n.good;
+      }
+      return l10n.techniqueIssue(holdUpdate.issues.first.apiValue);
+    }
+
+    final repUpdate = result.repUpdate;
+    if (repUpdate != null && repUpdate.issueEvents.isNotEmpty) {
+      return l10n.techniqueIssue(repUpdate.issueEvents.first.code);
+    }
+
+    return result.liveCue ?? '';
+  }
+
+  String _startGuide(AppLocalizations l10n) {
+    if (_phase != WorkoutSessionPhase.preparation) {
+      return '';
+    }
+
+    final readiness = _readiness;
+    if (readiness == null) {
+      return l10n.startGuideFindFrame;
+    }
+
+    switch (readiness.state) {
+      case ReadinessState.viewAlignment:
+        return _workoutAnalyzer.profile.requiredView == ExerciseView.side
+            ? l10n.startGuideSideView
+            : l10n.startGuideFrontView;
+      case ReadinessState.bodyVisibilityCheck:
+        return l10n.startGuideBodyVisible;
+      case ReadinessState.startPoseCheck:
+        return l10n.startGuideHoldStart;
+      case ReadinessState.countdownReady:
+        return l10n.startGuideCountdown;
+      case ReadinessState.activeTracking:
+        return '';
+    }
+  }
+
   String _goalText(AppLocalizations l10n) {
     if (widget.plan.isRepBased) {
       return l10n.repsGoalValue(widget.plan.targetValue);
@@ -314,9 +393,20 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
 
   String _counterDetails(AppLocalizations l10n) {
     if (widget.plan.isRepBased) {
-      return '${l10n.goal}: ${_goalText(l10n)}';
+      return '${_progress.remainingReps} ${l10n.reps}';
     }
     return '$_repCount ${l10n.reps}';
+  }
+
+  double _progressFraction() {
+    final target = widget.plan.targetValue;
+    if (target <= 0) {
+      return 0;
+    }
+    if (widget.plan.isRepBased) {
+      return (_repCount / target).clamp(0.0, 1.0);
+    }
+    return (_activeWorkoutStopwatch.elapsed.inSeconds / target).clamp(0.0, 1.0);
   }
 
   @override
@@ -339,7 +429,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
             onBack: () => _showExitConfirmation(l10n),
           ),
           Positioned(
-            top: MediaQuery.of(context).size.height * 0.12,
+            top: MediaQuery.of(context).size.height * 0.115,
             left: 16,
             right: 16,
             child: WorkoutProgressCard(
@@ -347,6 +437,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
               primaryValue: _primaryCounterValue(),
               primaryLabel: _primaryCounterLabel(l10n),
               secondaryText: _counterDetails(l10n),
+              progressFraction: _progressFraction(),
             ),
           ),
           Positioned(
@@ -357,6 +448,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
               systemStatus: _statusText(l10n),
               liveCue: _liveCue,
               repSummary: _repSummary(l10n),
+              startGuide: _startGuide(l10n),
             ),
           ),
           Positioned(
@@ -364,7 +456,12 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
             right: 16,
             bottom: 24,
             child: ElevatedButton(
-              onPressed: _isSaving ? null : () => _finishWorkout(l10n),
+              onPressed: _isSaving
+                  ? null
+                  : () => _finishWorkout(
+                        l10n,
+                        saveZeroReps: widget.plan.isTimeBased,
+                      ),
               child: Text(_isSaving ? l10n.loading : l10n.finishWorkout),
             ),
           ),

@@ -6,41 +6,66 @@ import '../models/user.dart';
 import '../models/workout.dart';
 
 class ApiService {
-  final Dio _dio;
-  final FlutterSecureStorage _storage;
+  ApiService({
+    Dio? dio,
+    TokenStorage? storage,
+  })  : _dio = dio ??
+            Dio(
+              BaseOptions(
+                baseUrl: ApiConfig.baseUrl,
+                connectTimeout: const Duration(seconds: 10),
+                receiveTimeout: const Duration(seconds: 10),
+              ),
+            ),
+        _storage = storage ?? SecureTokenStorage() {
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          if (options.extra['skipAuth'] != true) {
+            final token = await _storage.read(key: 'access_token');
+            if (token != null) {
+              options.headers['Authorization'] = 'Bearer $token';
+              print('Token added to request: ${options.path}');
+            } else {
+              print('No token found for request: ${options.path}');
+            }
+          }
+          return handler.next(options);
+        },
+        onError: (error, handler) async {
+          print('API Error: ${error.response?.statusCode} - ${error.message}');
+          if (await _shouldRefresh(error)) {
+            try {
+              final token = await _refreshAccessToken();
+              final retryOptions = _copyRequestOptions(error.requestOptions);
+              retryOptions.headers['Authorization'] =
+                  'Bearer ${token.accessToken}';
+              retryOptions.extra['retriedAfterRefresh'] = true;
 
-  ApiService()
-      : _dio = Dio(BaseOptions(
-          baseUrl: ApiConfig.baseUrl,
-          connectTimeout: const Duration(seconds: 10),
-          receiveTimeout: const Duration(seconds: 10),
-        )),
-        _storage = const FlutterSecureStorage() {
-    // Add auth interceptor
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final token = await _storage.read(key: 'access_token');
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-          print('🔑 Token added to request: ${options.path}');
-        } else {
-          print('⚠️ No token found for request: ${options.path}');
-        }
-        return handler.next(options);
-      },
-      onError: (error, handler) {
-        print('❌ API Error: ${error.response?.statusCode} - ${error.message}');
-        return handler.next(error);
-      },
-    ));
+              final response = await _dio.fetch<dynamic>(retryOptions);
+              return handler.resolve(response);
+            } catch (refreshError) {
+              await logout();
+              print('Token refresh failed: $refreshError');
+            }
+          }
+          return handler.next(error);
+        },
+      ),
+    );
 
-    // Add logging interceptor (debug only)
-    _dio.interceptors.add(LogInterceptor(
-      requestBody: true,
-      responseBody: true,
-      error: true,
-    ));
+    _dio.interceptors.add(
+      LogInterceptor(
+        requestHeader: false,
+        requestBody: false,
+        responseBody: false,
+        error: true,
+      ),
+    );
   }
+
+  final Dio _dio;
+  final TokenStorage _storage;
 
   // ============ AUTH ============
 
@@ -56,7 +81,7 @@ class ApiService {
   }
 
   Future<AuthToken> login(String email, String password) async {
-    print('🔐 Logging in...');
+    print('Logging in...');
     final response = await _dio.post(
       ApiConfig.login,
       data: FormData.fromMap({
@@ -65,26 +90,71 @@ class ApiService {
       }),
     );
     final token = AuthToken.fromJson(response.data);
-    await _storage.write(key: 'access_token', value: token.accessToken);
-    print('✅ Token saved: ${token.accessToken.substring(0, 20)}...');
+    await _saveToken(token);
+    print('Token saved');
     return token;
   }
 
   Future<void> logout() async {
     await _storage.delete(key: 'access_token');
-    print('🚪 Logged out');
+    await _storage.delete(key: 'refresh_token');
+    print('Logged out');
   }
 
   Future<bool> isLoggedIn() async {
     final token = await _storage.read(key: 'access_token');
-    print('🔍 Checking auth status: ${token != null}');
+    print('Checking auth status: ${token != null}');
     return token != null;
+  }
+
+  Future<void> _saveToken(AuthToken token) async {
+    await _storage.write(key: 'access_token', value: token.accessToken);
+    await _storage.write(key: 'refresh_token', value: token.refreshToken);
+  }
+
+  Future<bool> _shouldRefresh(DioException error) async {
+    if (error.response?.statusCode != 401) {
+      return false;
+    }
+    if (error.requestOptions.extra['retriedAfterRefresh'] == true) {
+      return false;
+    }
+    if (error.requestOptions.extra['skipAuth'] == true) {
+      return false;
+    }
+    final refreshToken = await _storage.read(key: 'refresh_token');
+    return refreshToken != null;
+  }
+
+  Future<AuthToken> _refreshAccessToken() async {
+    final refreshToken = await _storage.read(key: 'refresh_token');
+    if (refreshToken == null) {
+      throw StateError('No refresh token found');
+    }
+
+    final response = await _dio.post(
+      ApiConfig.refresh,
+      data: {'refresh_token': refreshToken},
+      options: Options(extra: {'skipAuth': true}),
+    );
+    final token = AuthToken.fromJson(response.data);
+    await _saveToken(token);
+    print('Access token refreshed');
+    return token;
+  }
+
+  RequestOptions _copyRequestOptions(RequestOptions requestOptions) {
+    return requestOptions.copyWith(
+      data: requestOptions.data,
+      headers: Map<String, dynamic>.from(requestOptions.headers),
+      extra: Map<String, dynamic>.from(requestOptions.extra),
+    );
   }
 
   // ============ WORKOUTS ============
 
   Future<List<Workout>> getWorkouts() async {
-    print('📋 Fetching workouts...');
+    print('Fetching workouts...');
     final response = await _dio.get(ApiConfig.workouts);
     return (response.data as List)
         .map((json) => Workout.fromJson(json))
@@ -97,22 +167,49 @@ class ApiService {
     int? averageQualityScore,
     Map<String, dynamic>? analysis,
   }) async {
-    print('💪 Creating workout: $exerciseType, $repCount reps');
+    print('Creating workout: $exerciseType, $repCount reps');
     try {
       final response = await _dio.post(
         ApiConfig.workouts,
         data: {
           'exercise_type': exerciseType,
           'rep_count': repCount,
-          if (averageQualityScore != null) 'average_quality_score': averageQualityScore,
+          if (averageQualityScore != null)
+            'average_quality_score': averageQualityScore,
           if (analysis != null) 'analysis': analysis,
         },
       );
-      print('✅ Workout created successfully: ${response.data}');
-      return Workout.fromJson(response.data);
+      final workout = Workout.fromJson(response.data);
+      print('Workout created successfully: ${workout.id}');
+      return workout;
     } catch (e) {
-      print('❌ Failed to create workout: $e');
+      print('Failed to create workout: $e');
       rethrow;
     }
   }
+}
+
+abstract class TokenStorage {
+  Future<String?> read({required String key});
+
+  Future<void> write({required String key, required String? value});
+
+  Future<void> delete({required String key});
+}
+
+class SecureTokenStorage implements TokenStorage {
+  SecureTokenStorage({FlutterSecureStorage? storage})
+      : _storage = storage ?? const FlutterSecureStorage();
+
+  final FlutterSecureStorage _storage;
+
+  @override
+  Future<String?> read({required String key}) => _storage.read(key: key);
+
+  @override
+  Future<void> write({required String key, required String? value}) =>
+      _storage.write(key: key, value: value);
+
+  @override
+  Future<void> delete({required String key}) => _storage.delete(key: key);
 }

@@ -4,6 +4,16 @@ import 'package:fitness_ai/models/workout_session_progress.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('workout plan starts tracking immediately by default', () {
+    const plan = WorkoutPlan(
+      exerciseType: ExerciseType.squat,
+      goalMode: WorkoutGoalMode.reps,
+      targetValue: 10,
+    );
+
+    expect(plan.preparationSeconds, 0);
+  });
+
   test('rep-based progress reaches goal when target reps are completed', () {
     const plan = WorkoutPlan(
       exerciseType: ExerciseType.squat,
@@ -50,9 +60,11 @@ void main() {
   });
 
   test('formatClock renders mm:ss values with leading zeroes', () {
-    expect(WorkoutSessionProgress.formatClock(const Duration(seconds: 5)), '00:05');
+    expect(WorkoutSessionProgress.formatClock(const Duration(seconds: 5)),
+        '00:05');
     expect(
-      WorkoutSessionProgress.formatClock(const Duration(minutes: 2, seconds: 7)),
+      WorkoutSessionProgress.formatClock(
+          const Duration(minutes: 2, seconds: 7)),
       '02:07',
     );
   });

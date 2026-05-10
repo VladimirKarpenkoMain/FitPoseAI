@@ -20,16 +20,19 @@ class User {
 
 class AuthToken {
   final String accessToken;
+  final String refreshToken;
   final String tokenType;
 
   AuthToken({
     required this.accessToken,
+    required this.refreshToken,
     this.tokenType = 'bearer',
   });
 
   factory AuthToken.fromJson(Map<String, dynamic> json) {
     return AuthToken(
       accessToken: json['access_token'],
+      refreshToken: json['refresh_token'],
       tokenType: json['token_type'] ?? 'bearer',
     );
   }

@@ -18,4 +18,20 @@ void main() {
   test('formats rep counts in Russian when the language code is Russian', () {
     expect(repCountSpeechText(5, 'ru-RU'), 'Пять');
   });
+
+  test('formats start countdown in English with singular seconds', () {
+    expect(startCountdownSpeechText(1, 'en-US'), 'Start in one second');
+  });
+
+  test('formats start countdown in English with plural seconds', () {
+    expect(startCountdownSpeechText(3, 'en-US'), 'Start in three seconds');
+  });
+
+  test('formats start countdown in Russian with singular seconds', () {
+    expect(startCountdownSpeechText(1, 'ru-RU'), 'Старт через одну секунду');
+  });
+
+  test('formats start countdown in Russian with plural seconds', () {
+    expect(startCountdownSpeechText(5, 'ru-RU'), 'Старт через пять секунд');
+  });
 }
