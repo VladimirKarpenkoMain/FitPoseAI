@@ -3,8 +3,8 @@ from fastapi import FastAPI
 from app.routes import auth, workouts
 
 app = FastAPI(
-    title="Fitness AI API",
-    description="Backend API for AI Fitness MVP",
+    title="FitPose AI API",
+    description="Backend API for FitPose AI MVP",
     version="1.0.0"
 )
 
@@ -16,4 +16,4 @@ app.include_router(workouts.router)
 @app.get("/")
 def root():
     """Health check endpoint."""
-    return {"status": "ok", "message": "Fitness AI API is running"}
+    return {"status": "ok", "message": "FitPose AI API is running"}

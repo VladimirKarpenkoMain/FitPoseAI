@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
-class WorkoutStatusStack extends StatelessWidget {
+class WorkoutStatusStack extends StatefulWidget {
   const WorkoutStatusStack({
     super.key,
     required this.systemStatus,
@@ -15,12 +17,70 @@ class WorkoutStatusStack extends StatelessWidget {
   final String startGuide;
 
   @override
+  State<WorkoutStatusStack> createState() => _WorkoutStatusStackState();
+}
+
+class _WorkoutStatusStackState extends State<WorkoutStatusStack> {
+  static const _liveCueHoldDuration = Duration(milliseconds: 1500);
+
+  Timer? _clearLiveCueTimer;
+  String _visibleLiveCue = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _syncLiveCue();
+  }
+
+  @override
+  void didUpdateWidget(covariant WorkoutStatusStack oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.liveCue.isNotEmpty || widget.liveCue != oldWidget.liveCue) {
+      _syncLiveCue();
+    }
+  }
+
+  @override
+  void dispose() {
+    _clearLiveCueTimer?.cancel();
+    super.dispose();
+  }
+
+  void _syncLiveCue() {
+    final nextCue = widget.liveCue.trim();
+    if (nextCue.isEmpty) {
+      _scheduleLiveCueClear();
+      return;
+    }
+
+    _clearLiveCueTimer?.cancel();
+    _visibleLiveCue = widget.liveCue;
+    _scheduleLiveCueClear();
+  }
+
+  void _scheduleLiveCueClear() {
+    _clearLiveCueTimer?.cancel();
+    if (_visibleLiveCue.isEmpty) {
+      return;
+    }
+
+    _clearLiveCueTimer = Timer(_liveCueHoldDuration, () {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _visibleLiveCue = '';
+      });
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final items = [
-      ('System status', systemStatus),
-      ('Start guide', startGuide),
-      ('Live cue', liveCue),
-      ('Last rep', repSummary),
+      ('System status', widget.systemStatus),
+      ('Start guide', widget.startGuide),
+      ('Live cue', _visibleLiveCue),
+      ('Last rep', widget.repSummary),
     ].where((item) => item.$2.isNotEmpty).toList();
 
     if (items.isEmpty) {

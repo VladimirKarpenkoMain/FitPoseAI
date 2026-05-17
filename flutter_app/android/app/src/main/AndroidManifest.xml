@@ -5,7 +5,7 @@
     <uses-feature android:name="android.hardware.camera.autofocus" android:required="false" />
     
     <application
-        android:label="fitness_ai"
+        android:label="FitPose AI"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

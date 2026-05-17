@@ -28,9 +28,6 @@ class FeedbackManager implements FeedbackOutput {
   // Track if TTS is currently speaking to prevent overlap
   bool _isSpeaking = false;
 
-  // Last spoken text to avoid repeating same feedback
-  String? _lastSpokenText;
-
   // Timestamp of last speech to implement cooldown
   DateTime? _lastSpeechTime;
 
@@ -39,6 +36,7 @@ class FeedbackManager implements FeedbackOutput {
 
   // Language settings
   String _currentLanguage = 'en-US';
+  String? _appliedLanguage;
   bool _isInitialized = false;
   bool _handlersConfigured = false;
   Future<void>? _initializationFuture;
@@ -123,8 +121,13 @@ class FeedbackManager implements FeedbackOutput {
   }
 
   Future<void> _applyCurrentLanguage() async {
+    if (_appliedLanguage == _currentLanguage) {
+      return;
+    }
+
     try {
       await _flutterTts.setLanguage(_currentLanguage);
+      _appliedLanguage = _currentLanguage;
     } catch (e) {
       print('Error setting TTS language $_currentLanguage: $e');
     }
@@ -135,7 +138,7 @@ class FeedbackManager implements FeedbackOutput {
   /// Features:
   /// - Cancels previous speech if new important feedback comes
   /// - Implements cooldown to prevent rapid-fire speech
-  /// - Avoids repeating the same text consecutively
+  /// - Allows repeated prompts after the cooldown expires
   ///
   /// [text] The text to speak
   /// [priority] If true, cancels current speech immediately
@@ -143,11 +146,6 @@ class FeedbackManager implements FeedbackOutput {
   Future<void> speak(String text, {bool priority = false}) async {
     if (!_isInitialized) {
       await _initializeTTS();
-    }
-    await _applyCurrentLanguage();
-
-    if (_lastSpokenText == text && !priority) {
-      return;
     }
 
     if (!priority && _lastSpeechTime != null) {
@@ -166,7 +164,6 @@ class FeedbackManager implements FeedbackOutput {
     }
 
     try {
-      _lastSpokenText = text;
       _lastSpeechTime = DateTime.now();
       await _flutterTts.speak(text);
     } catch (e) {

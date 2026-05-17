@@ -6,6 +6,8 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const ttsChannel = MethodChannel('flutter_tts');
+  const audioGlobalChannel = MethodChannel('xyz.luan/audioplayers.global');
+  const audioChannel = MethodChannel('xyz.luan/audioplayers');
   final calls = <MethodCall>[];
 
   setUp(() {
@@ -15,19 +17,32 @@ void main() {
       calls.add(call);
       return true;
     });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(audioGlobalChannel, (call) async {
+      return true;
+    });
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(audioChannel, (call) async {
+      return true;
+    });
   });
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(ttsChannel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(audioGlobalChannel, null);
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(audioChannel, null);
   });
 
   test('applies Russian TTS language before speaking Russian rep counts',
       () async {
     final manager = FeedbackManager();
 
-    await manager.setRussian();
+    await manager.setEnglish();
     calls.clear();
+    await manager.setRussian();
     await manager.speakRepCount(5, priority: true);
 
     final speakIndex = calls.indexWhere((call) => call.method == 'speak');
@@ -40,5 +55,27 @@ void main() {
         .map((call) => call.arguments)
         .last;
     expect(languageBeforeSpeak, 'ru-RU');
+    expect(
+      calls.where((call) => call.method == 'setLanguage'),
+      hasLength(1),
+    );
+  });
+
+  test('allows repeated non-priority speech after cooldown', () async {
+    final manager = FeedbackManager();
+
+    await manager.setEnglish();
+    calls.clear();
+
+    await manager.speak('Hold the start position', priority: true);
+    await Future<void>.delayed(
+      const Duration(milliseconds: FeedbackManager.speechCooldownMs + 50),
+    );
+    await manager.speak('Hold the start position');
+
+    expect(
+      calls.where((call) => call.method == 'speak'),
+      hasLength(2),
+    );
   });
 }

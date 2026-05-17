@@ -47,4 +47,40 @@ void main() {
     expect(find.text('Live cue'), findsOneWidget);
     expect(find.text('Last rep'), findsOneWidget);
   });
+
+  testWidgets('workout status stack keeps live cue briefly after it clears', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: WorkoutStatusStack(
+            systemStatus: 'Tracking active',
+            liveCue: 'Go lower',
+            repSummary: '',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Go lower'), findsOneWidget);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: Scaffold(
+          body: WorkoutStatusStack(
+            systemStatus: 'Tracking active',
+            liveCue: '',
+            repSummary: '',
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Go lower'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 1600));
+
+    expect(find.text('Go lower'), findsNothing);
+  });
 }

@@ -1,4 +1,4 @@
-# Fitness AI - Flutter Client
+# FitPose AI - Flutter Client
 
 Flutter mobile app for AI-powered fitness tracking.
 

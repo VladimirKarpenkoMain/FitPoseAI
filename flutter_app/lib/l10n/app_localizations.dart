@@ -38,7 +38,7 @@ class AppLocalizations {
   String get loginError => _text('Login error', 'Ошибка входа');
   String get registerError => _text('Registration error', 'Ошибка регистрации');
 
-  String get fitnessAI => 'FITNESS AI';
+  String get fitnessAI => 'FITPOSE AI';
   String get navHome => _text('Home', 'Главная');
   String get navHistory => _text('Workout history', 'История тренировок');
   String get trackProgress =>

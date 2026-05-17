@@ -109,7 +109,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
       _sessionRecorder.recordHoldUpdate(holdUpdate);
     }
 
-    _handleStartCountdownSpeech(result.readiness);
+    _handlePreparationSpeech(l10n, result.readiness);
 
     setState(() {
       _readiness = result.readiness;
@@ -132,7 +132,10 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     }
   }
 
-  void _handleStartCountdownSpeech(ReadinessResult readiness) {
+  void _handlePreparationSpeech(
+    AppLocalizations l10n,
+    ReadinessResult readiness,
+  ) {
     if (_phase != WorkoutSessionPhase.preparation) {
       return;
     }
@@ -147,6 +150,17 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     }
 
     _feedbackCoordinator.resetStartCountdown();
+
+    final blocker = readiness.blocker;
+    if (blocker == null || blocker.isEmpty || readiness.canStartTracking) {
+      return;
+    }
+
+    unawaited(
+      _feedbackCoordinator.announceReadinessPrompt(
+        _translateSystemStatus(l10n, blocker),
+      ),
+    );
   }
 
   void _startActivePhase() {
@@ -264,6 +278,8 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
         return l10n.faceCamera;
       case 'Turn to your side':
         return l10n.turnToSide;
+      case 'Stand fully in frame':
+        return l10n.standInFrame;
       case 'Keep one full side visible':
         return l10n.keepFullSideVisible;
       case 'Hold the start position':

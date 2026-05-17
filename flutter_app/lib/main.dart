@@ -19,19 +19,19 @@ Future<void> main() async {
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
       ],
-      child: const FitnessAIApp(),
+      child: const FitPoseAIApp(),
     ),
   );
 }
 
-class FitnessAIApp extends ConsumerStatefulWidget {
-  const FitnessAIApp({super.key});
+class FitPoseAIApp extends ConsumerStatefulWidget {
+  const FitPoseAIApp({super.key});
 
   @override
-  ConsumerState<FitnessAIApp> createState() => _FitnessAIAppState();
+  ConsumerState<FitPoseAIApp> createState() => _FitPoseAIAppState();
 }
 
-class _FitnessAIAppState extends ConsumerState<FitnessAIApp> {
+class _FitPoseAIAppState extends ConsumerState<FitPoseAIApp> {
   @override
   void initState() {
     super.initState();
@@ -47,7 +47,7 @@ class _FitnessAIAppState extends ConsumerState<FitnessAIApp> {
     ref.watch(feedbackManagerWithLocaleProvider);
 
     return MaterialApp.router(
-      title: 'Fitness AI',
+      title: 'FitPose AI',
       debugShowCheckedModeBanner: false,
       locale: effectiveLocale,
       localizationsDelegates: const [

@@ -7,16 +7,23 @@ import 'feedback_output.dart';
 /// Handles both TTS announcements and sound effects based on counter results
 class WorkoutFeedbackCoordinator {
   final FeedbackOutput _feedbackManager;
+  final DateTime Function() _now;
 
   // Track the last feedback to avoid repetition
   String? _lastFeedback;
   int? _lastStartCountdownSeconds;
+  String? _lastReadinessPrompt;
 
   // Cooldown for feedback messages (milliseconds)
   static const int feedbackCooldownMs = 2000;
+  static const int readinessPromptCooldownMs = 4000;
   DateTime? _lastFeedbackTime;
+  DateTime? _lastReadinessPromptTime;
 
-  WorkoutFeedbackCoordinator(this._feedbackManager);
+  WorkoutFeedbackCoordinator(
+    this._feedbackManager, {
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now;
 
   Future<void> processRepUpdate(
     RepUpdate update, {
@@ -51,6 +58,30 @@ class WorkoutFeedbackCoordinator {
 
   void resetStartCountdown() {
     _lastStartCountdownSeconds = null;
+  }
+
+  Future<void> announceReadinessPrompt(String message) async {
+    final prompt = message.trim();
+    if (prompt.isEmpty) {
+      return;
+    }
+
+    final now = _now();
+    if (_lastReadinessPrompt == prompt && _lastReadinessPromptTime != null) {
+      final timeSince = now.difference(_lastReadinessPromptTime!);
+      if (timeSince.inMilliseconds < readinessPromptCooldownMs) {
+        return;
+      }
+    }
+
+    _lastReadinessPrompt = prompt;
+    _lastReadinessPromptTime = now;
+    await _feedbackManager.speak(prompt);
+  }
+
+  void resetReadinessPrompt() {
+    _lastReadinessPrompt = null;
+    _lastReadinessPromptTime = null;
   }
 
   Future<void> _provideCriticalIssueFeedback(RepUpdate update) async {
@@ -142,6 +173,7 @@ class WorkoutFeedbackCoordinator {
     _lastFeedback = null;
     _lastFeedbackTime = null;
     resetStartCountdown();
+    resetReadinessPrompt();
   }
 
   /// Stops any ongoing speech

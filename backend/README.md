@@ -1,6 +1,6 @@
-# Fitness AI Backend
+# FitPose AI Backend
 
-FastAPI backend for the AI Fitness MVP application.
+FastAPI backend for the FitPose AI MVP application.
 
 **Requires Python 3.12+**
 

@@ -1,6 +1,6 @@
 {
-    "name": "fitness_ai",
-    "short_name": "fitness_ai",
+    "name": "FitPose AI",
+    "short_name": "FitPose AI",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

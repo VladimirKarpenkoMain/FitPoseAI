@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class WorkoutCreate(BaseModel):
@@ -16,7 +16,7 @@ class WorkoutResponse(BaseModel):
 
     id: int
     user_id: int
-    exercise_type: str
+    exercise_type: str = Field(validation_alias="exercise_type_code")
     rep_count: int
     date: datetime
     average_quality_score: int | None = None

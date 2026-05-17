@@ -37,7 +37,7 @@ void main() {
           ),
           routerProvider.overrideWithValue(_buildRouter()),
         ],
-        child: const FitnessAIApp(),
+        child: const FitPoseAIApp(),
       ),
     );
 
@@ -69,7 +69,7 @@ void main() {
           ),
           routerProvider.overrideWithValue(_buildRouter()),
         ],
-        child: const FitnessAIApp(),
+        child: const FitPoseAIApp(),
       ),
     );
 

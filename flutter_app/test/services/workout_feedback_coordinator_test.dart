@@ -36,6 +36,38 @@ void main() {
 
     expect(output.countdowns, isEmpty);
   });
+
+  test('readiness prompts repeat only after cooldown', () async {
+    final output = _FakeFeedbackOutput();
+    var now = DateTime(2026, 1, 1);
+    final coordinator = WorkoutFeedbackCoordinator(
+      output,
+      now: () => now,
+    );
+
+    await coordinator.announceReadinessPrompt('Step into frame');
+    await coordinator.announceReadinessPrompt('Step into frame');
+    now = now.add(
+      const Duration(
+        milliseconds: WorkoutFeedbackCoordinator.readinessPromptCooldownMs - 1,
+      ),
+    );
+    await coordinator.announceReadinessPrompt('Step into frame');
+    now = now.add(const Duration(milliseconds: 1));
+    await coordinator.announceReadinessPrompt('Step into frame');
+
+    expect(output.spoken, ['Step into frame', 'Step into frame']);
+  });
+
+  test('readiness prompt changes are announced immediately', () async {
+    final output = _FakeFeedbackOutput();
+    final coordinator = WorkoutFeedbackCoordinator(output);
+
+    await coordinator.announceReadinessPrompt('Step into frame');
+    await coordinator.announceReadinessPrompt('Turn to your side');
+
+    expect(output.spoken, ['Step into frame', 'Turn to your side']);
+  });
 }
 
 class _FakeFeedbackOutput implements FeedbackOutput {
