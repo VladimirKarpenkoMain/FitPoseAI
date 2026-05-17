@@ -1,0 +1,10 @@
+**
+
+!backend/
+!backend/**
+
+backend/logs/
+backend/.pytest_cache/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/**/*.pyo
