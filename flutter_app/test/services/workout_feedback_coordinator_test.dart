@@ -1,8 +1,43 @@
+import 'package:fitness_ai/analysis/rep_analyzer.dart';
+import 'package:fitness_ai/logic/counter_result.dart';
+import 'package:fitness_ai/models/workout_analysis.dart';
 import 'package:fitness_ai/services/feedback_output.dart';
 import 'package:fitness_ai/services/workout_feedback_coordinator.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
+  test('rep updates speak count without playing beep', () async {
+    final output = _FakeFeedbackOutput();
+    final coordinator = WorkoutFeedbackCoordinator(output);
+
+    await coordinator.processRepUpdate(
+      const RepUpdate(
+        repCount: 3,
+        countIncremented: true,
+        repAnalysis: null,
+        phase: MotionPhase.lockout,
+        detectedPhase: MotionPhase.lockout,
+      ),
+    );
+
+    expect(output.repCounts, [3]);
+  });
+
+  test('counter results speak count without playing beep', () async {
+    final output = _FakeFeedbackOutput();
+    final coordinator = WorkoutFeedbackCoordinator(output);
+
+    await coordinator.processFeedback(
+      CounterResult(
+        count: 2,
+        feedback: 'Good',
+        countIncremented: true,
+      ),
+    );
+
+    expect(output.repCounts, [2]);
+  });
+
   test('start countdown announces each remaining second once', () async {
     final output = _FakeFeedbackOutput();
     final coordinator = WorkoutFeedbackCoordinator(output);
@@ -72,11 +107,9 @@ void main() {
 
 class _FakeFeedbackOutput implements FeedbackOutput {
   final List<String> spoken = [];
+  final List<int> repCounts = [];
   final List<int> countdowns = [];
   final List<bool> countdownPriorities = [];
-
-  @override
-  Future<void> playBeep() async {}
 
   @override
   Future<void> speak(String text, {bool priority = false}) async {
@@ -84,7 +117,9 @@ class _FakeFeedbackOutput implements FeedbackOutput {
   }
 
   @override
-  Future<void> speakRepCount(int count, {bool priority = false}) async {}
+  Future<void> speakRepCount(int count, {bool priority = false}) async {
+    repCounts.add(count);
+  }
 
   @override
   Future<void> speakStartCountdown(

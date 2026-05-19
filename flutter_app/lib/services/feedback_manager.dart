@@ -1,14 +1,12 @@
 import 'dart:io' show Platform;
 
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 import 'feedback_output.dart';
 import 'speech_text_formatter.dart';
 
 /// Singleton class that manages audio feedback for exercises
-/// Provides Text-to-Speech for corrections and rep counts,
-/// and sound effects for successful reps
+/// Provides Text-to-Speech for corrections and rep counts.
 class FeedbackManager implements FeedbackOutput {
   // Singleton instance
   static final FeedbackManager _instance = FeedbackManager._internal();
@@ -21,9 +19,6 @@ class FeedbackManager implements FeedbackOutput {
 
   // TTS instance
   final FlutterTts _flutterTts = FlutterTts();
-
-  // Audio player for beep sound
-  final AudioPlayer _audioPlayer = AudioPlayer();
 
   // Track if TTS is currently speaking to prevent overlap
   bool _isSpeaking = false;
@@ -189,16 +184,6 @@ class FeedbackManager implements FeedbackOutput {
     await speak(text, priority: priority);
   }
 
-  /// Plays a beep sound for successful rep completion
-  @override
-  Future<void> playBeep() async {
-    try {
-      await _audioPlayer.play(AssetSource('sounds/beep.mp3'));
-    } catch (e) {
-      print('Beep sound not available - skipping (asset file not found)');
-    }
-  }
-
   /// Stops any currently playing speech
   @override
   Future<void> stop() async {
@@ -233,6 +218,5 @@ class FeedbackManager implements FeedbackOutput {
 
   Future<void> dispose() async {
     await _flutterTts.stop();
-    await _audioPlayer.dispose();
   }
 }

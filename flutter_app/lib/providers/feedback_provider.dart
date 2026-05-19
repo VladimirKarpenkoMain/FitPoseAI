@@ -12,7 +12,6 @@ import 'app_locale_provider.dart';
 /// ```dart
 /// final feedbackManager = ref.read(feedbackProvider);
 /// await feedbackManager.speak("Go Lower");
-/// await feedbackManager.playBeep();
 /// ```
 final feedbackProvider = Provider<FeedbackManager>((ref) {
   final manager = FeedbackManager();

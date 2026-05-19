@@ -18,6 +18,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
   bool _isLogin = true;
   bool _obscurePassword = true;
+  bool _registrationSubmitted = false;
 
   @override
   void dispose() {
@@ -33,6 +34,7 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
+    _registrationSubmitted = !_isLogin;
 
     if (_isLogin) {
       ref.read(authProvider.notifier).login(email, password);
@@ -63,8 +65,17 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
     ref.listen<AuthState>(authProvider, (previous, next) {
       final message = _resolveFailure(l10n, next.failure);
       if (next.status == AuthStatus.error && message != null) {
+        _registrationSubmitted = false;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(message)),
+        );
+      }
+      if (_registrationSubmitted &&
+          previous?.status == AuthStatus.loading &&
+          next.status == AuthStatus.authenticated) {
+        _registrationSubmitted = false;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.registrationSuccess)),
         );
       }
     });
@@ -186,17 +197,41 @@ class _AuthScreenState extends ConsumerState<AuthScreen> {
                                 const SizedBox(height: 20),
                                 ElevatedButton(
                                   onPressed: isLoading ? null : _submit,
-                                  child: Text(
-                                    _isLogin ? l10n.login : l10n.register,
-                                  ),
+                                  child: isLoading
+                                      ? Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            SizedBox(
+                                              height: 18,
+                                              width: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimary,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 10),
+                                            Text(
+                                              _isLogin
+                                                  ? l10n.loggingIn
+                                                  : l10n.registering,
+                                            ),
+                                          ],
+                                        )
+                                      : Text(
+                                          _isLogin ? l10n.login : l10n.register,
+                                        ),
                                 ),
                                 const SizedBox(height: 14),
                                 TextButton(
-                                  onPressed: () {
-                                    setState(() {
-                                      _isLogin = !_isLogin;
-                                    });
-                                  },
+                                  onPressed: isLoading
+                                      ? null
+                                      : () {
+                                          setState(() {
+                                            _isLogin = !_isLogin;
+                                          });
+                                        },
                                   child: Text(
                                     _isLogin ? l10n.register : l10n.login,
                                   ),

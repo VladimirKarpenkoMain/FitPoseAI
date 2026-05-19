@@ -35,6 +35,17 @@ class PoseDetectorView extends StatefulWidget {
   State<PoseDetectorView> createState() => _PoseDetectorViewState();
 }
 
+@visibleForTesting
+Size workoutCameraPreviewDisplaySize(
+  Size previewSize,
+  Orientation orientation,
+) {
+  if (orientation == Orientation.landscape) {
+    return Size(previewSize.width, previewSize.height);
+  }
+  return Size(previewSize.height, previewSize.width);
+}
+
 class _PoseDetectorViewState extends State<PoseDetectorView>
     with WidgetsBindingObserver {
   CameraController? _cameraController;
@@ -65,6 +76,8 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
   int _frameIndex = 0;
   int _lastDebugLogAtMs = -100000;
   String? _lastDebugLine;
+  Orientation? _lastViewOrientation;
+  bool _isRestartingForOrientation = false;
   late AppLocalizations _l10n;
 
   @override
@@ -85,6 +98,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
       analyzeFrame: _workoutAnalyzer.processFrame,
       missingPoseTolerance: _poseLossGracePeriod,
     );
+    _allowWorkoutOrientations();
     _stopwatch.start();
     _initializeCamera();
   }
@@ -95,6 +109,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
     _stopwatch.stop();
     _stopCamera();
     _poseDetector.close();
+    _restorePortraitOrientation();
     super.dispose();
   }
 
@@ -109,6 +124,29 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
     } else if (state == AppLifecycleState.resumed) {
       _initializeCamera();
     }
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (!mounted || _cameraController == null) {
+      return;
+    }
+
+    final view = View.maybeOf(context);
+    if (view == null) {
+      return;
+    }
+
+    final physicalSize = view.physicalSize;
+    final nextOrientation = physicalSize.width > physicalSize.height
+        ? Orientation.landscape
+        : Orientation.portrait;
+    if (nextOrientation == _lastViewOrientation) {
+      return;
+    }
+    _lastViewOrientation = nextOrientation;
+    unawaited(_restartCameraForOrientation());
   }
 
   @override
@@ -155,6 +193,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
       await _cameraController!.startImageStream(_processImage);
 
       if (mounted) {
+        _lastViewOrientation = MediaQuery.orientationOf(context);
         setState(() {
           _isInitialized = true;
           _errorMessage = null;
@@ -195,6 +234,31 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
     _frameIndex = 0;
 
     await _startCamera();
+  }
+
+  Future<void> _restartCameraForOrientation() async {
+    if (_isRestartingForOrientation || _cameras == null || _cameras!.isEmpty) {
+      return;
+    }
+    _isRestartingForOrientation = true;
+
+    try {
+      await _stopCamera();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isInitialized = false;
+        _currentPose = null;
+        _highlightedLandmarks = const <PoseLandmarkType>{};
+      });
+      _workoutFrameProcessor.reset();
+      _lastPoseSeenAtMs = null;
+      _frameIndex = 0;
+      await _startCamera();
+    } finally {
+      _isRestartingForOrientation = false;
+    }
   }
 
   void _processImage(CameraImage image) async {
@@ -827,10 +891,6 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-    ]);
-
     if (_errorMessage != null) {
       return _buildErrorWidget();
     }
@@ -847,6 +907,20 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
         _buildCameraSwitchButton(),
       ],
     );
+  }
+
+  Future<void> _allowWorkoutOrientations() {
+    return SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+  }
+
+  Future<void> _restorePortraitOrientation() {
+    return SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
   }
 
   Widget _buildLoadingWidget() {
@@ -908,13 +982,18 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
 
   Widget _buildCameraPreview() {
     final controller = _cameraController!;
+    final previewSize = controller.value.previewSize!;
+    final displaySize = workoutCameraPreviewDisplaySize(
+      previewSize,
+      MediaQuery.orientationOf(context),
+    );
 
     return SizedBox.expand(
       child: FittedBox(
         fit: BoxFit.cover,
         child: SizedBox(
-          width: controller.value.previewSize!.height,
-          height: controller.value.previewSize!.width,
+          width: displaySize.width,
+          height: displaySize.height,
           child: CameraPreview(controller),
         ),
       ),
@@ -929,10 +1008,14 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
         _getInputImageRotation(camera) ?? InputImageRotation.rotation0deg;
 
     final size = MediaQuery.of(context).size;
-    var scaleFactor = size.height / previewSize.width;
-    if (scaleFactor * previewSize.height < size.width) {
-      scaleFactor = size.width / previewSize.height;
-    }
+    final displaySize = workoutCameraPreviewDisplaySize(
+      previewSize,
+      MediaQuery.orientationOf(context),
+    );
+    final scaleFactor = math.max(
+      size.width / displaySize.width,
+      size.height / displaySize.height,
+    );
 
     return CustomPaint(
       painter: PosePainter(
@@ -941,6 +1024,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
         rotation: rotation,
         cameraLensDirection: camera.lensDirection,
         scaleFactor: scaleFactor,
+        displayImageSize: displaySize,
         highlightedLandmarks: _highlightedLandmarks,
       ),
       size: Size.infinite,

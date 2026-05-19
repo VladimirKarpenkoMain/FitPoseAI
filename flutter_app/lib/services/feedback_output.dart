@@ -5,6 +5,5 @@ abstract class FeedbackOutput {
     int remainingSeconds, {
     bool priority = false,
   });
-  Future<void> playBeep();
   Future<void> stop();
 }

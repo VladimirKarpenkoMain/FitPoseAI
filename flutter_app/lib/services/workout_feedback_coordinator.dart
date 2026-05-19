@@ -4,7 +4,7 @@ import '../models/workout_analysis.dart';
 import 'feedback_output.dart';
 
 /// Coordinates feedback between exercise counters and the FeedbackManager
-/// Handles both TTS announcements and sound effects based on counter results
+/// Handles TTS announcements based on counter results.
 class WorkoutFeedbackCoordinator {
   final FeedbackOutput _feedbackManager;
   final DateTime Function() _now;
@@ -33,8 +33,6 @@ class WorkoutFeedbackCoordinator {
       await _provideCriticalIssueFeedback(update);
       return;
     }
-
-    await _feedbackManager.playBeep();
 
     if (speakCount) {
       await _feedbackManager.speakRepCount(update.repCount);
@@ -102,10 +100,8 @@ class WorkoutFeedbackCoordinator {
     CounterResult result, {
     bool speakCount = true,
   }) async {
-    // If rep was counted, play beep and speak the count
+    // If rep was counted, speak the count
     if (result.countIncremented) {
-      await _feedbackManager.playBeep();
-
       if (speakCount) {
         await _feedbackManager.speakRepCount(result.count);
       }

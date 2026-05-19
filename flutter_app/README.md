@@ -44,7 +44,7 @@ lib/
 │   └── workout.dart             # Workout model
 ├── services/
 │   ├── api_service.dart         # Dio HTTP client
-│   ├── feedback_manager.dart    # TTS & sound effects (Singleton)
+│   ├── feedback_manager.dart    # TTS feedback manager (Singleton)
 │   └── workout_feedback_coordinator.dart  # Coordinates feedback
 ├── providers/
 │   ├── api_provider.dart        # API service provider
@@ -94,7 +94,7 @@ final coordinator = WorkoutFeedbackCoordinator(FeedbackManager());
 // Process pose
 final result = counter.calculate(pose);
 await coordinator.processFeedback(result);
-// Automatically speaks feedback and plays beep on rep!
+// Automatically speaks feedback and rep counts.
 ```
 
 See `lib/services/FEEDBACK_USAGE.md` for detailed documentation.

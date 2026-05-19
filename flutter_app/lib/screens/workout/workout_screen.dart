@@ -17,7 +17,7 @@ import '../../services/workout_feedback_coordinator.dart';
 import '../../services/workout_session_recorder.dart';
 import 'pose_detector_view.dart';
 import 'workout_route_args.dart';
-import 'widgets/workout_live_header.dart';
+import 'widgets/workout_hud_overlay.dart';
 import 'widgets/workout_progress_card.dart';
 import 'widgets/workout_status_stack.dart';
 
@@ -440,38 +440,31 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
             enforceReadinessChecks: true,
             onAnalysisFrame: _onAnalysisFrame,
           ),
-          WorkoutLiveHeader(
+          WorkoutHudOverlay(
             title: l10n.exerciseName(_exerciseType.apiValue),
             onBack: () => _showExitConfirmation(l10n),
-          ),
-          Positioned(
-            top: MediaQuery.of(context).size.height * 0.115,
-            left: 16,
-            right: 16,
-            child: WorkoutProgressCard(
+            primaryValue: _primaryCounterValue(),
+            primaryLabel: _primaryCounterLabel(l10n),
+            secondaryText: _counterDetails(l10n),
+            goalText: '${l10n.goal}: ${_goalText(l10n)}',
+            systemStatus: _statusText(l10n),
+            startGuide: _startGuide(l10n),
+            liveCue: _liveCue,
+            repSummary: _repSummary(l10n),
+            progressCard: WorkoutProgressCard(
               goalText: '${l10n.goal}: ${_goalText(l10n)}',
               primaryValue: _primaryCounterValue(),
               primaryLabel: _primaryCounterLabel(l10n),
               secondaryText: _counterDetails(l10n),
               progressFraction: _progressFraction(),
             ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 110,
-            child: WorkoutStatusStack(
+            statusStack: WorkoutStatusStack(
               systemStatus: _statusText(l10n),
               liveCue: _liveCue,
               repSummary: _repSummary(l10n),
               startGuide: _startGuide(l10n),
             ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: 24,
-            child: ElevatedButton(
+            finishButton: ElevatedButton(
               onPressed: _isSaving
                   ? null
                   : () => _finishWorkout(

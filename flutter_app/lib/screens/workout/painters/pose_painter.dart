@@ -39,6 +39,7 @@ class PosePainter extends CustomPainter {
     required this.rotation,
     required this.cameraLensDirection,
     this.scaleFactor,
+    this.displayImageSize,
     this.highlightedLandmarks = const <PoseLandmarkType>{},
   });
 
@@ -47,6 +48,7 @@ class PosePainter extends CustomPainter {
   final InputImageRotation rotation;
   final CameraLensDirection cameraLensDirection;
   final double? scaleFactor;
+  final Size? displayImageSize;
   final Set<PoseLandmarkType> highlightedLandmarks;
 
   final Paint _landmarkPaint = Paint()
@@ -94,7 +96,8 @@ class PosePainter extends CustomPainter {
       }
       final point = _transformPoint(landmark.x, landmark.y, size);
       final isHighlighted = highlightedLandmarks.contains(entry.key);
-      canvas.drawCircle(point, isHighlighted ? 10 : 8, isHighlighted ? _warningLandmarkPaint : _landmarkPaint);
+      canvas.drawCircle(point, isHighlighted ? 10 : 8,
+          isHighlighted ? _warningLandmarkPaint : _landmarkPaint);
     }
   }
 
@@ -110,11 +113,14 @@ class PosePainter extends CustomPainter {
         continue;
       }
 
-      final startPoint = _transformPoint(startLandmark.x, startLandmark.y, size);
+      final startPoint =
+          _transformPoint(startLandmark.x, startLandmark.y, size);
       final endPoint = _transformPoint(endLandmark.x, endLandmark.y, size);
-      final shouldWarn =
-          highlightedLandmarks.contains(connection.$1) || highlightedLandmarks.contains(connection.$2);
-      final paint = shouldWarn ? _warningPaint : _getPaintForConnection(connection.$1, connection.$2);
+      final shouldWarn = highlightedLandmarks.contains(connection.$1) ||
+          highlightedLandmarks.contains(connection.$2);
+      final paint = shouldWarn
+          ? _warningPaint
+          : _getPaintForConnection(connection.$1, connection.$2);
       canvas.drawLine(startPoint, endPoint, paint);
     }
   }
@@ -135,8 +141,11 @@ class PosePainter extends CustomPainter {
     final isRotated = rotation == InputImageRotation.rotation90deg ||
         rotation == InputImageRotation.rotation270deg;
 
-    final sourceWidth = isRotated ? imageSize.height : imageSize.width;
-    final sourceHeight = isRotated ? imageSize.width : imageSize.height;
+    final displayImageSize = this.displayImageSize;
+    final sourceWidth = displayImageSize?.width ??
+        (isRotated ? imageSize.height : imageSize.width);
+    final sourceHeight = displayImageSize?.height ??
+        (isRotated ? imageSize.width : imageSize.height);
 
     final scaleX = canvasSize.width / sourceWidth;
     final scaleY = canvasSize.height / sourceHeight;
@@ -160,6 +169,7 @@ class PosePainter extends CustomPainter {
     return oldDelegate.pose != pose ||
         oldDelegate.imageSize != imageSize ||
         oldDelegate.rotation != rotation ||
+        oldDelegate.displayImageSize != displayImageSize ||
         oldDelegate.highlightedLandmarks != highlightedLandmarks;
   }
 }

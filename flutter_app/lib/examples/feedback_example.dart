@@ -32,7 +32,7 @@ class SquatWorkoutExample {
     // Calculate counter result
     final result = counter.calculate(pose);
 
-    // Provide automatic feedback (TTS + beep)
+    // Provide automatic voice feedback.
     await coordinator.processFeedback(result);
 
     // You can access the result data
@@ -162,13 +162,6 @@ class TTSTestExample {
     // Back to English
     await manager.setEnglish();
     await manager.speak("Back to English");
-  }
-
-  /// Test beep sound
-  Future<void> testBeep() async {
-    await manager.speak("Playing beep in 3 seconds");
-    await Future.delayed(const Duration(seconds: 3));
-    await manager.playBeep();
   }
 }
 

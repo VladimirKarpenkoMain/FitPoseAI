@@ -6,8 +6,6 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   const ttsChannel = MethodChannel('flutter_tts');
-  const audioGlobalChannel = MethodChannel('xyz.luan/audioplayers.global');
-  const audioChannel = MethodChannel('xyz.luan/audioplayers');
   final calls = <MethodCall>[];
 
   setUp(() {
@@ -17,23 +15,11 @@ void main() {
       calls.add(call);
       return true;
     });
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(audioGlobalChannel, (call) async {
-      return true;
-    });
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(audioChannel, (call) async {
-      return true;
-    });
   });
 
   tearDown(() {
     TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
         .setMockMethodCallHandler(ttsChannel, null);
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(audioGlobalChannel, null);
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(audioChannel, null);
   });
 
   test('applies Russian TTS language before speaking Russian rep counts',

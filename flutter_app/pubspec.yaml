@@ -36,9 +36,6 @@ dependencies:
   # Text-to-Speech for feedback
   flutter_tts: ^4.2.0
   
-  # Audio player for sound effects
-  audioplayers: ^6.1.0
-
   # Persisted app settings
   shared_preferences: ^2.3.2
 
@@ -53,6 +50,3 @@ flutter:
   # Assets
   assets:
     - assets/images/squat_pose.png
-  # Uncomment the line below after adding beep.mp3 to assets/sounds/
-  # See assets/sounds/README.md for instructions
-  #   - assets/sounds/beep.mp3

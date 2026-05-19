@@ -35,6 +35,7 @@ class AppLocalizations {
       );
   String get loggingIn => _text('Signing in...', 'Выполняется вход...');
   String get registering => _text('Registering...', 'Создание аккаунта...');
+  String get registrationSuccess => _text('Account created', 'Аккаунт создан');
   String get loginError => _text('Login error', 'Ошибка входа');
   String get registerError => _text('Registration error', 'Ошибка регистрации');
 
