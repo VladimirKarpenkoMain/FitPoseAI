@@ -41,6 +41,48 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('WorkoutHudOverlay uses light landscape panels', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(800, 360));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: WorkoutHudOverlay(
+            title: 'Squat',
+            onBack: () {},
+            primaryValue: '8',
+            primaryLabel: 'reps',
+            secondaryText: '2 reps',
+            goalText: 'Goal: 10 reps',
+            systemStatus: 'Tracking active',
+            startGuide: '',
+            liveCue: '',
+            repSummary: '',
+            progressCard: const SizedBox.shrink(),
+            statusStack: const SizedBox.shrink(),
+            finishButton: const Text('Finish'),
+          ),
+        ),
+      ),
+    );
+
+    final counter = tester.widget<Container>(
+      find.byKey(const Key('workout-hud-landscape-counter')),
+    );
+    final counterDecoration = counter.decoration! as BoxDecoration;
+    expect(counterDecoration.color, const Color(0xEBFFFFFF));
+
+    final status = tester.widget<Container>(
+      find.byKey(const Key('workout-hud-landscape-readable-status')),
+    );
+    final statusDecoration = status.decoration! as BoxDecoration;
+    expect(statusDecoration.color, const Color(0xEBFFFFFF));
+
+    final labelText = tester.widget<Text>(find.text('REPS'));
+    expect(labelText.style?.color, const Color(0xFF18212F));
+  });
+
   testWidgets('WorkoutHudOverlay keeps real landscape controls compact', (
     tester,
   ) async {

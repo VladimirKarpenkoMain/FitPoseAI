@@ -430,7 +430,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
     final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFFF4F7FB),
       body: Stack(
         fit: StackFit.expand,
         children: [

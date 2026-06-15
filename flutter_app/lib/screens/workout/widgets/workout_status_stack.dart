@@ -91,17 +91,18 @@ class _WorkoutStatusStackState extends State<WorkoutStatusStack> {
     final secondary = items.skip(1).toList();
 
     return Container(
+      key: const Key('workout-status-stack-container'),
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.68),
+        color: const Color(0xF2FFFFFF),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: const Color(0x1F18212F)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.24),
+          const BoxShadow(
+            color: Color(0x1F18212F),
             blurRadius: 22,
-            offset: const Offset(0, 10),
+            offset: Offset(0, 10),
           ),
         ],
       ),
@@ -151,7 +152,7 @@ class _StatusLine extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: Colors.white70,
+            color: Color(0xFF6C7788),
             fontSize: 12,
             fontWeight: FontWeight.w800,
           ),
@@ -160,7 +161,7 @@ class _StatusLine extends StatelessWidget {
         Text(
           value,
           style: TextStyle(
-            color: Colors.white,
+            color: const Color(0xFF18212F),
             fontSize: prominent ? 17 : 14,
             fontWeight: FontWeight.w800,
             height: 1.18,
@@ -186,9 +187,9 @@ class _StatusChip extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 260),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.08),
+        color: const Color(0xFFF8FBFF),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+        border: Border.all(color: const Color(0x1A18212F)),
       ),
       child: _StatusLine(
         label: label,

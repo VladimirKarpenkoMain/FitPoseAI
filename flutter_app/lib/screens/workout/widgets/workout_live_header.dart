@@ -26,7 +26,7 @@ class WorkoutLiveHeader extends StatelessWidget {
                 title,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF18212F),
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
                 ),
@@ -52,10 +52,10 @@ class _HeaderButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.black.withValues(alpha: 0.42),
+      color: Colors.white.withValues(alpha: 0.88),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.white.withValues(alpha: 0.14)),
+        side: const BorderSide(color: Color(0x1F18212F)),
       ),
       child: InkWell(
         onTap: onPressed,
@@ -63,7 +63,7 @@ class _HeaderButton extends StatelessWidget {
         child: SizedBox(
           width: 44,
           height: 44,
-          child: Icon(icon, color: Colors.white),
+          child: Icon(icon, color: const Color(0xFF18212F)),
         ),
       ),
     );
