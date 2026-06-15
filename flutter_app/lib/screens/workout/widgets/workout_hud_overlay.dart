@@ -211,9 +211,16 @@ class _LandscapeCounterPanel extends StatelessWidget {
       height: 92,
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.66),
+        color: const Color(0xEBFFFFFF),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: const Color(0x1F18212F)),
+        boxShadow: [
+          const BoxShadow(
+            color: Color(0x1F18212F),
+            blurRadius: 22,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -241,7 +248,7 @@ class _LandscapeCounterPanel extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF18212F),
                     fontSize: 14,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0,
@@ -253,7 +260,7 @@ class _LandscapeCounterPanel extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.white70,
+                    color: Color(0xFF6C7788),
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
                   ),
@@ -264,7 +271,7 @@ class _LandscapeCounterPanel extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    color: Colors.white60,
+                    color: Color(0xFF6C7788),
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
                   ),
@@ -309,9 +316,16 @@ class _LandscapeStatusPanel extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 58, maxHeight: 92),
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.66),
+        color: const Color(0xEBFFFFFF),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: const Color(0x1F18212F)),
+        boxShadow: [
+          const BoxShadow(
+            color: Color(0x1F18212F),
+            blurRadius: 22,
+            offset: Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -324,7 +338,9 @@ class _LandscapeStatusPanel extends StatelessWidget {
               maxLines: index == 0 ? 2 : 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: index == 0 ? Colors.white : Colors.white70,
+                color: index == 0
+                    ? const Color(0xFF18212F)
+                    : const Color(0xFF6C7788),
                 fontSize: index == 0 ? 14 : 12,
                 fontWeight: index == 0 ? FontWeight.w900 : FontWeight.w700,
                 height: 1.12,

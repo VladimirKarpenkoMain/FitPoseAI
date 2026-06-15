@@ -22,16 +22,17 @@ class WorkoutProgressCard extends StatelessWidget {
     final progressPercent = (clampedProgress * 100).round();
 
     return Container(
+      key: const Key('workout-progress-card-container'),
       padding: const EdgeInsets.fromLTRB(18, 16, 16, 16),
       decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.62),
+        color: const Color(0xEBFFFFFF),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: const Color(0x1F18212F)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.24),
+          const BoxShadow(
+            color: Color(0x1F18212F),
             blurRadius: 24,
-            offset: const Offset(0, 12),
+            offset: Offset(0, 12),
           ),
         ],
       ),
@@ -46,7 +47,7 @@ class WorkoutProgressCard extends StatelessWidget {
                 Text(
                   primaryLabel.toUpperCase(),
                   style: const TextStyle(
-                    color: Colors.white70,
+                    color: Color(0xFF6C7788),
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 0,
@@ -77,7 +78,7 @@ class WorkoutProgressCard extends StatelessWidget {
                       child: Text(
                         secondaryText,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF18212F),
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
                         ),
@@ -89,7 +90,7 @@ class WorkoutProgressCard extends StatelessWidget {
                 Text(
                   goalText,
                   style: const TextStyle(
-                    color: Colors.white70,
+                    color: Color(0xFF6C7788),
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
                   ),
@@ -108,14 +109,14 @@ class WorkoutProgressCard extends StatelessWidget {
                   value: clampedProgress,
                   strokeWidth: 6,
                   strokeCap: StrokeCap.round,
-                  backgroundColor: Colors.white.withValues(alpha: 0.18),
+                  backgroundColor: const Color(0x33FF7A00),
                   valueColor: const AlwaysStoppedAnimation(Color(0xFFFF7A00)),
                 ),
                 Center(
                   child: Text(
                     '$progressPercent%',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF18212F),
                       fontSize: 14,
                       fontWeight: FontWeight.w900,
                     ),
