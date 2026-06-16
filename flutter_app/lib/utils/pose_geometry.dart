@@ -61,14 +61,11 @@ class PoseGeometry {
   ///
   /// Returns the angle in degrees (0-180).
   static double getAngle(Point<double> a, Point<double> b, Point<double> c) {
-    // Vectors BA and BC
     final ba = Point(a.x - b.x, a.y - b.y);
     final bc = Point(c.x - b.x, c.y - b.y);
 
-    // Dot product BA · BC
     final dotProduct = ba.x * bc.x + ba.y * bc.y;
 
-    // Vector magnitudes
     final magnitudeBA = sqrt(ba.x * ba.x + ba.y * ba.y);
     final magnitudeBC = sqrt(bc.x * bc.x + bc.y * bc.y);
 
@@ -77,13 +74,11 @@ class PoseGeometry {
       return 180.0;
     }
 
-    // Cosine of the angle
     double cosAngle = dotProduct / (magnitudeBA * magnitudeBC);
 
-    // Clamp value to [-1, 1] to avoid acos errors
+    // Clamp to [-1, 1] to avoid acos domain errors from float rounding
     cosAngle = cosAngle.clamp(-1.0, 1.0);
 
-    // Convert radians to degrees
     final angleRadians = acos(cosAngle);
     final angleDegrees = angleRadians * 180 / pi;
 

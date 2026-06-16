@@ -11,6 +11,7 @@ void main() {
       const MaterialApp(
         home: Scaffold(
           body: WorkoutProgressCard(
+            title: 'Squat',
             goalText: 'Goal: 10 reps',
             primaryValue: '3',
             primaryLabel: 'reps',

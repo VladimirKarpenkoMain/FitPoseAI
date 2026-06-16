@@ -60,7 +60,6 @@ class JumpingJackCounter extends ExerciseCounter {
 
   @override
   CounterResult calculate(Pose pose) {
-    // Get landmarks
     final leftShoulder = pose.landmarks[PoseLandmarkType.leftShoulder];
     final leftWrist = pose.landmarks[PoseLandmarkType.leftWrist];
     final leftHip = pose.landmarks[PoseLandmarkType.leftHip];
@@ -110,13 +109,11 @@ class JumpingJackCounter extends ExerciseCounter {
       legAngle = _legSmoother.update(raw);
     }
 
-    // Check if we have valid data
     if ((leftArmAngle == null && rightArmAngle == null) || legAngle == null) {
       _feedback = "Position yourself in frame";
       return CounterResult(count: _count, feedback: _feedback);
     }
 
-    // Use average arm angle or single available angle
     double armAngle;
     if (leftArmAngle != null && rightArmAngle != null) {
       armAngle = (leftArmAngle + rightArmAngle) / 2;
@@ -124,7 +121,6 @@ class JumpingJackCounter extends ExerciseCounter {
       armAngle = leftArmAngle ?? rightArmAngle!;
     }
 
-    // Update state machine and check for rep
     bool repCounted = _updateState(armAngle, legAngle);
 
     return CounterResult(

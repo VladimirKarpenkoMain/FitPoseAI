@@ -105,6 +105,7 @@ void main() {
             liveCue: '',
             repSummary: '',
             progressCard: const WorkoutProgressCard(
+              title: 'Squat',
               goalText: 'Goal: 10 reps',
               primaryValue: '0',
               primaryLabel: 'reps',

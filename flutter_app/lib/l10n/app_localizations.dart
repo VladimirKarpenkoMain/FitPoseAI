@@ -274,6 +274,10 @@ class AppLocalizations {
         'Замрите в стартовой позе',
       );
   String get trackingActive => _text('Tracking active', 'Отслеживание активно');
+  String get statusLabelSystem => _text('System status', 'Статус');
+  String get statusLabelStartGuide => _text('Start guide', 'Подсказка');
+  String get statusLabelLiveCue => _text('Live cue', 'Совет');
+  String get statusLabelLastRep => _text('Last rep', 'Последний повтор');
   String getReadyCountdown(int seconds) =>
       _text('Start in $seconds', 'Старт через $seconds');
   String holdStillCountdown(int seconds) => _text(

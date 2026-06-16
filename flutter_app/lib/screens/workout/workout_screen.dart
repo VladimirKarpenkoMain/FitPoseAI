@@ -452,6 +452,7 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
             liveCue: _liveCue,
             repSummary: _repSummary(l10n),
             progressCard: WorkoutProgressCard(
+              title: l10n.exerciseName(_exerciseType.apiValue),
               goalText: '${l10n.goal}: ${_goalText(l10n)}',
               primaryValue: _primaryCounterValue(),
               primaryLabel: _primaryCounterLabel(l10n),
@@ -463,6 +464,10 @@ class _WorkoutScreenState extends ConsumerState<WorkoutScreen> {
               liveCue: _liveCue,
               repSummary: _repSummary(l10n),
               startGuide: _startGuide(l10n),
+              systemStatusLabel: l10n.statusLabelSystem,
+              startGuideLabel: l10n.statusLabelStartGuide,
+              liveCueLabel: l10n.statusLabelLiveCue,
+              repSummaryLabel: l10n.statusLabelLastRep,
             ),
             finishButton: ElevatedButton(
               onPressed: _isSaving

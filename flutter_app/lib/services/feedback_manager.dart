@@ -1,5 +1,6 @@
 import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 
 import 'feedback_output.dart';
@@ -8,7 +9,6 @@ import 'speech_text_formatter.dart';
 /// Singleton class that manages audio feedback for exercises
 /// Provides Text-to-Speech for corrections and rep counts.
 class FeedbackManager implements FeedbackOutput {
-  // Singleton instance
   static final FeedbackManager _instance = FeedbackManager._internal();
 
   factory FeedbackManager() {
@@ -17,19 +17,14 @@ class FeedbackManager implements FeedbackOutput {
 
   FeedbackManager._internal();
 
-  // TTS instance
   final FlutterTts _flutterTts = FlutterTts();
 
-  // Track if TTS is currently speaking to prevent overlap
   bool _isSpeaking = false;
-
-  // Timestamp of last speech to implement cooldown
   DateTime? _lastSpeechTime;
 
-  // Minimum time between speech utterances (milliseconds)
+  /// Minimum time between speech utterances to prevent rapid-fire speech.
   static const int speechCooldownMs = 1500;
 
-  // Language settings
   String _currentLanguage = 'en-US';
   String? _appliedLanguage;
   bool _isInitialized = false;
@@ -63,7 +58,9 @@ class FeedbackManager implements FeedbackOutput {
         try {
           await _flutterTts.setEngine('com.google.android.tts');
         } catch (e) {
-          print('Google TTS engine not available - using default engine: $e');
+          if (kDebugMode) {
+            debugPrint('Google TTS engine not available, using default: $e');
+          }
         }
       } else if (Platform.isIOS) {
         await _flutterTts.setSharedInstance(true);
@@ -86,7 +83,9 @@ class FeedbackManager implements FeedbackOutput {
       _configureHandlers();
       _isInitialized = true;
     } catch (e) {
-      print('Error initializing TTS: $e');
+      if (kDebugMode) {
+        debugPrint('Error initializing TTS: $e');
+      }
     }
   }
 
@@ -105,7 +104,9 @@ class FeedbackManager implements FeedbackOutput {
 
     _flutterTts.setErrorHandler((msg) {
       _isSpeaking = false;
-      print('TTS Error: $msg');
+      if (kDebugMode) {
+        debugPrint('TTS Error: $msg');
+      }
     });
 
     _flutterTts.setCancelHandler(() {
@@ -124,7 +125,9 @@ class FeedbackManager implements FeedbackOutput {
       await _flutterTts.setLanguage(_currentLanguage);
       _appliedLanguage = _currentLanguage;
     } catch (e) {
-      print('Error setting TTS language $_currentLanguage: $e');
+      if (kDebugMode) {
+        debugPrint('Error setting TTS language $_currentLanguage: $e');
+      }
     }
   }
 
@@ -162,7 +165,9 @@ class FeedbackManager implements FeedbackOutput {
       _lastSpeechTime = DateTime.now();
       await _flutterTts.speak(text);
     } catch (e) {
-      print('Error speaking: $e');
+      if (kDebugMode) {
+        debugPrint('Error speaking: $e');
+      }
       _isSpeaking = false;
     }
   }

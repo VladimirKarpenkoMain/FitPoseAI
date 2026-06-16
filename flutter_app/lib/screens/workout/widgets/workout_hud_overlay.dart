@@ -55,7 +55,6 @@ class WorkoutHudOverlay extends StatelessWidget {
     }
 
     return _PortraitWorkoutHud(
-      title: title,
       onBack: onBack,
       progressCard: progressCard,
       statusStack: statusStack,
@@ -66,14 +65,12 @@ class WorkoutHudOverlay extends StatelessWidget {
 
 class _PortraitWorkoutHud extends StatelessWidget {
   const _PortraitWorkoutHud({
-    required this.title,
     required this.onBack,
     required this.progressCard,
     required this.statusStack,
     required this.finishButton,
   });
 
-  final String title;
   final VoidCallback onBack;
   final Widget progressCard;
   final Widget statusStack;
@@ -86,7 +83,7 @@ class _PortraitWorkoutHud extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        WorkoutLiveHeader(title: title, onBack: onBack),
+        WorkoutLiveHeader(onBack: onBack),
         Positioned(
           key: const Key('workout-hud-portrait-progress'),
           top: size.height * 0.115,
@@ -154,13 +151,14 @@ class _LandscapeWorkoutHud extends StatelessWidget {
     return Stack(
       fit: StackFit.expand,
       children: [
-        WorkoutLiveHeader(title: title, onBack: onBack),
+        WorkoutLiveHeader(onBack: onBack),
         Positioned(
           key: const Key('workout-hud-landscape-progress'),
           left: sideInset,
           top: padding.top + 64,
           width: panelWidth,
           child: _LandscapeCounterPanel(
+            title: title,
             primaryValue: primaryValue,
             primaryLabel: primaryLabel,
             secondaryText: secondaryText,
@@ -193,12 +191,14 @@ class _LandscapeWorkoutHud extends StatelessWidget {
 
 class _LandscapeCounterPanel extends StatelessWidget {
   const _LandscapeCounterPanel({
+    required this.title,
     required this.primaryValue,
     required this.primaryLabel,
     required this.secondaryText,
     required this.goalText,
   });
 
+  final String title;
   final String primaryValue;
   final String primaryLabel;
   final String secondaryText;
@@ -208,8 +208,8 @@ class _LandscapeCounterPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       key: const Key('workout-hud-landscape-counter'),
-      height: 92,
-      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      height: 96,
+      padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
       decoration: BoxDecoration(
         color: const Color(0xEBFFFFFF),
         borderRadius: BorderRadius.circular(18),
@@ -243,36 +243,50 @@ class _LandscapeCounterPanel extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (title.isNotEmpty) ...[
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF18212F),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                ],
                 Text(
                   primaryLabel.toUpperCase(),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFF18212F),
-                    fontSize: 14,
+                    fontSize: 12,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 0,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   secondaryText,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFF6C7788),
-                    fontSize: 12,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 2),
                 Text(
                   goalText,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFF6C7788),
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
                 ),

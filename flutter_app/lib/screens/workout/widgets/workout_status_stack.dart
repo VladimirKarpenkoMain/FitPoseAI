@@ -9,12 +9,20 @@ class WorkoutStatusStack extends StatefulWidget {
     required this.liveCue,
     required this.repSummary,
     this.startGuide = '',
+    this.systemStatusLabel = 'System status',
+    this.startGuideLabel = 'Start guide',
+    this.liveCueLabel = 'Live cue',
+    this.repSummaryLabel = 'Last rep',
   });
 
   final String systemStatus;
   final String liveCue;
   final String repSummary;
   final String startGuide;
+  final String systemStatusLabel;
+  final String startGuideLabel;
+  final String liveCueLabel;
+  final String repSummaryLabel;
 
   @override
   State<WorkoutStatusStack> createState() => _WorkoutStatusStackState();
@@ -77,10 +85,10 @@ class _WorkoutStatusStackState extends State<WorkoutStatusStack> {
   @override
   Widget build(BuildContext context) {
     final items = [
-      ('System status', widget.systemStatus),
-      ('Start guide', widget.startGuide),
-      ('Live cue', _visibleLiveCue),
-      ('Last rep', widget.repSummary),
+      (widget.systemStatusLabel, widget.systemStatus),
+      (widget.startGuideLabel, widget.startGuide),
+      (widget.liveCueLabel, _visibleLiveCue),
+      (widget.repSummaryLabel, widget.repSummary),
     ].where((item) => item.$2.isNotEmpty).toList();
 
     if (items.isEmpty) {

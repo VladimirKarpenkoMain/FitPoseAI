@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 class WorkoutProgressCard extends StatelessWidget {
   const WorkoutProgressCard({
     super.key,
+    required this.title,
     required this.goalText,
     required this.primaryValue,
     required this.primaryLabel,
@@ -10,6 +11,7 @@ class WorkoutProgressCard extends StatelessWidget {
     required this.progressFraction,
   });
 
+  final String title;
   final String goalText;
   final String primaryValue;
   final String primaryLabel;
@@ -44,6 +46,20 @@ class WorkoutProgressCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
+                if (title.isNotEmpty) ...[
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Color(0xFF18212F),
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                ],
                 Text(
                   primaryLabel.toUpperCase(),
                   style: const TextStyle(

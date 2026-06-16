@@ -61,16 +61,14 @@ lib/
 │   └── pose_geometry.dart       # Angle calculation utilities
 ├── router/
 │   └── app_router.dart          # GoRouter navigation
-├── screens/
-│   ├── auth_screen.dart         # Login/Register screen
-│   ├── home_screen.dart         # Home screen with workout list
-│   └── workout/
-│       ├── workout_screen.dart  # Main workout screen
-│       ├── pose_detector_view.dart
-│       └── painters/
-│           └── pose_painter.dart
-└── examples/
-    └── feedback_example.dart    # Usage examples
+└── screens/
+    ├── auth_screen.dart         # Login/Register screen
+    ├── home_screen.dart         # Home screen with workout list
+    └── workout/
+        ├── workout_screen.dart  # Main workout screen
+        ├── pose_detector_view.dart
+        └── painters/
+            └── pose_painter.dart
 ```
 
 ## Feedback System

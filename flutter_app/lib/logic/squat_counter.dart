@@ -51,7 +51,6 @@ class SquatCounter extends ExerciseCounter {
 
   @override
   CounterResult calculate(Pose pose) {
-    // Get landmarks for both legs
     final leftHip = pose.landmarks[PoseLandmarkType.leftHip];
     final leftKnee = pose.landmarks[PoseLandmarkType.leftKnee];
     final leftAnkle = pose.landmarks[PoseLandmarkType.leftAnkle];
@@ -60,7 +59,6 @@ class SquatCounter extends ExerciseCounter {
     final rightKnee = pose.landmarks[PoseLandmarkType.rightKnee];
     final rightAnkle = pose.landmarks[PoseLandmarkType.rightAnkle];
 
-    // Calculate angles for both legs with smoothing
     double? leftAngle;
     double? rightAngle;
     double? avgHipY;
@@ -92,13 +90,11 @@ class SquatCounter extends ExerciseCounter {
       avgHipY = rightHip.y;
     }
 
-    // If no valid angle, return current state
     if (leftAngle == null && rightAngle == null) {
       _feedback = "Position yourself in frame";
       return CounterResult(count: _count, feedback: _feedback);
     }
 
-    // Use average of both angles, or single available angle
     double kneeAngle;
     if (leftAngle != null && rightAngle != null) {
       kneeAngle = (leftAngle + rightAngle) / 2;
@@ -106,7 +102,6 @@ class SquatCounter extends ExerciseCounter {
       kneeAngle = leftAngle ?? rightAngle!;
     }
 
-    // Update state machine and check for rep
     bool repCounted = _updateState(kneeAngle, avgHipY);
 
     return CounterResult(

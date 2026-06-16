@@ -3,11 +3,9 @@ import 'package:flutter/material.dart';
 class WorkoutLiveHeader extends StatelessWidget {
   const WorkoutLiveHeader({
     super.key,
-    required this.title,
     required this.onBack,
   });
 
-  final String title;
   final VoidCallback onBack;
 
   @override
@@ -15,25 +13,12 @@ class WorkoutLiveHeader extends StatelessWidget {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-        child: Row(
-          children: [
-            _HeaderButton(
-              onPressed: onBack,
-              icon: Icons.arrow_back_rounded,
-            ),
-            Expanded(
-              child: Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: Color(0xFF18212F),
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-            const SizedBox(width: 44),
-          ],
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: _HeaderButton(
+            onPressed: onBack,
+            icon: Icons.arrow_back_rounded,
+          ),
         ),
       ),
     );

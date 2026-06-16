@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../config/api_config.dart';
@@ -25,15 +26,16 @@ class ApiService {
             final token = await _storage.read(key: 'access_token');
             if (token != null) {
               options.headers['Authorization'] = 'Bearer $token';
-              print('Token added to request: ${options.path}');
-            } else {
-              print('No token found for request: ${options.path}');
             }
           }
           return handler.next(options);
         },
         onError: (error, handler) async {
-          print('API Error: ${error.response?.statusCode} - ${error.message}');
+          if (kDebugMode) {
+            debugPrint(
+              'API Error: ${error.response?.statusCode} - ${error.message}',
+            );
+          }
           if (await _shouldRefresh(error)) {
             try {
               final token = await _refreshAccessToken();
@@ -46,7 +48,9 @@ class ApiService {
               return handler.resolve(response);
             } catch (refreshError) {
               await logout();
-              print('Token refresh failed: $refreshError');
+              if (kDebugMode) {
+                debugPrint('Token refresh failed: $refreshError');
+              }
             }
           }
           return handler.next(error);
@@ -67,8 +71,6 @@ class ApiService {
   final Dio _dio;
   final TokenStorage _storage;
 
-  // ============ AUTH ============
-
   Future<User> register(String email, String password) async {
     final response = await _dio.post(
       ApiConfig.register,
@@ -81,7 +83,6 @@ class ApiService {
   }
 
   Future<AuthToken> login(String email, String password) async {
-    print('Logging in...');
     final response = await _dio.post(
       ApiConfig.login,
       data: FormData.fromMap({
@@ -91,19 +92,16 @@ class ApiService {
     );
     final token = AuthToken.fromJson(response.data);
     await _saveToken(token);
-    print('Token saved');
     return token;
   }
 
   Future<void> logout() async {
     await _storage.delete(key: 'access_token');
     await _storage.delete(key: 'refresh_token');
-    print('Logged out');
   }
 
   Future<bool> isLoggedIn() async {
     final token = await _storage.read(key: 'access_token');
-    print('Checking auth status: ${token != null}');
     return token != null;
   }
 
@@ -139,7 +137,6 @@ class ApiService {
     );
     final token = AuthToken.fromJson(response.data);
     await _saveToken(token);
-    print('Access token refreshed');
     return token;
   }
 
@@ -151,10 +148,7 @@ class ApiService {
     );
   }
 
-  // ============ WORKOUTS ============
-
   Future<List<Workout>> getWorkouts() async {
-    print('Fetching workouts...');
     final response = await _dio.get(ApiConfig.workouts);
     return (response.data as List)
         .map((json) => Workout.fromJson(json))
@@ -167,7 +161,6 @@ class ApiService {
     int? averageQualityScore,
     Map<String, dynamic>? analysis,
   }) async {
-    print('Creating workout: $exerciseType, $repCount reps');
     try {
       final response = await _dio.post(
         ApiConfig.workouts,
@@ -180,10 +173,14 @@ class ApiService {
         },
       );
       final workout = Workout.fromJson(response.data);
-      print('Workout created successfully: ${workout.id}');
+      if (kDebugMode) {
+        debugPrint('Workout created successfully: ${workout.id}');
+      }
       return workout;
     } catch (e) {
-      print('Failed to create workout: $e');
+      if (kDebugMode) {
+        debugPrint('Failed to create workout: $e');
+      }
       rethrow;
     }
   }

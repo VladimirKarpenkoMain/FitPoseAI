@@ -57,7 +57,6 @@ class PushUpCounter extends ExerciseCounter {
 
   @override
   CounterResult calculate(Pose pose) {
-    // Get landmarks for arm angle (Shoulder -> Elbow -> Wrist)
     final leftShoulder = pose.landmarks[PoseLandmarkType.leftShoulder];
     final leftElbow = pose.landmarks[PoseLandmarkType.leftElbow];
     final leftWrist = pose.landmarks[PoseLandmarkType.leftWrist];
@@ -72,7 +71,6 @@ class PushUpCounter extends ExerciseCounter {
     final rightHip = pose.landmarks[PoseLandmarkType.rightHip];
     final rightAnkle = pose.landmarks[PoseLandmarkType.rightAnkle];
 
-    // Calculate arm angles with smoothing
     double? leftArmAngle;
     double? rightArmAngle;
 
@@ -99,7 +97,6 @@ class PushUpCounter extends ExerciseCounter {
       return CounterResult(count: _count, feedback: _feedback);
     }
 
-    // Use average of both arm angles, or single available angle
     double armAngle;
     if (leftArmAngle != null && rightArmAngle != null) {
       armAngle = (leftArmAngle + rightArmAngle) / 2;
@@ -150,7 +147,6 @@ class PushUpCounter extends ExerciseCounter {
       return CounterResult(count: _count, feedback: _feedback);
     }
 
-    // Update state machine
     bool repCounted = _updateState(armAngle, shoulderY);
 
     return CounterResult(

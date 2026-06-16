@@ -100,18 +100,15 @@ class WorkoutFeedbackCoordinator {
     CounterResult result, {
     bool speakCount = true,
   }) async {
-    // If rep was counted, speak the count
     if (result.countIncremented) {
       if (speakCount) {
         await _feedbackManager.speakRepCount(result.count);
       }
 
-      // Reset feedback tracking on new rep
       _lastFeedback = null;
       return;
     }
 
-    // Provide correction feedback if needed
     await _provideCorrectionFeedback(result.feedback);
   }
 
@@ -120,9 +117,7 @@ class WorkoutFeedbackCoordinator {
     String feedback, {
     bool force = false,
   }) async {
-    // Skip if same as last feedback
     if (_lastFeedback == feedback) {
-      // Check cooldown before repeating
       if (_lastFeedbackTime != null) {
         final timeSince = DateTime.now().difference(_lastFeedbackTime!);
         if (timeSince.inMilliseconds < feedbackCooldownMs) {
@@ -131,7 +126,6 @@ class WorkoutFeedbackCoordinator {
       }
     }
 
-    // Speak important corrections
     if (force || _shouldSpeakFeedback(feedback)) {
       await _feedbackManager.speak(feedback);
       _lastFeedback = feedback;
@@ -141,7 +135,6 @@ class WorkoutFeedbackCoordinator {
 
   /// Determines if a feedback message should be spoken
   bool _shouldSpeakFeedback(String feedback) {
-    // List of important feedback messages that should be spoken
     const importantFeedback = [
       'Go Lower',
       'Go Down',

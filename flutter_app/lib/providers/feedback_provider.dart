@@ -16,7 +16,6 @@ import 'app_locale_provider.dart';
 final feedbackProvider = Provider<FeedbackManager>((ref) {
   final manager = FeedbackManager();
 
-  // Dispose when provider is disposed
   ref.onDispose(() {
     manager.dispose();
   });

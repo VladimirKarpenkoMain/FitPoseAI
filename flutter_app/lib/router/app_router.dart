@@ -77,8 +77,6 @@ final routerProvider = Provider<GoRouter>((ref) {
           return WorkoutCompleteScreen(args: args);
         },
       ),
-      // Workout route with exercise type parameter
-      // Usage: context.go('/workout/squat') or context.go('/workout/pushup')
       GoRoute(
         path: '/workout-setup/:exerciseType',
         name: 'workout_setup',
