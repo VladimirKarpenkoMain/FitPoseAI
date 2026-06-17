@@ -28,20 +28,22 @@ class ViewDetector {
       return const ViewDetectionResult(ExerciseView.unknown, 0);
     }
 
-    final shoulderWidth =
-        PoseMetrics.horizontalDistance(leftShoulder, rightShoulder);
-    final hipWidth = PoseMetrics.horizontalDistance(leftHip, rightHip);
+    // Use full 2D distances so the ratio is independent of body orientation in
+    // the frame. A side view always has the left/right joints close together
+    // relative to the torso length, whether the person is standing (vertical
+    // torso) or in a push-up/plank (horizontal torso, landscape).
+    final shoulderWidth = PoseMetrics.distance(leftShoulder, rightShoulder);
+    final hipWidth = PoseMetrics.distance(leftHip, rightHip);
     final averageWidth = (shoulderWidth + hipWidth) / 2;
-    final leftTorsoHeight = PoseMetrics.verticalDistance(leftShoulder, leftHip);
-    final rightTorsoHeight =
-        PoseMetrics.verticalDistance(rightShoulder, rightHip);
-    final averageTorsoHeight = (leftTorsoHeight + rightTorsoHeight) / 2;
+    final leftTorsoLength = PoseMetrics.distance(leftShoulder, leftHip);
+    final rightTorsoLength = PoseMetrics.distance(rightShoulder, rightHip);
+    final averageTorsoLength = (leftTorsoLength + rightTorsoLength) / 2;
 
-    if (averageTorsoHeight <= 0) {
+    if (averageTorsoLength <= 0) {
       return const ViewDetectionResult(ExerciseView.unknown, 0);
     }
 
-    final widthRatio = averageWidth / averageTorsoHeight;
+    final widthRatio = averageWidth / averageTorsoLength;
 
     if (widthRatio >= _frontWidthRatio) {
       return const ViewDetectionResult(ExerciseView.front, 0.85);

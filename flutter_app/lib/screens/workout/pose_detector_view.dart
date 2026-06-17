@@ -47,6 +47,70 @@ Size workoutCameraPreviewDisplaySize(
   return Size(previewSize.height, previewSize.width);
 }
 
+const Map<DeviceOrientation, int> _deviceOrientationDegrees = {
+  DeviceOrientation.portraitUp: 0,
+  DeviceOrientation.landscapeLeft: 90,
+  DeviceOrientation.portraitDown: 180,
+  DeviceOrientation.landscapeRight: 270,
+};
+
+/// Computes the rotation that must be applied to the raw camera frame before it
+/// is handed to ML Kit (and used to map landmarks back onto the preview).
+///
+/// On Android the value combines the sensor orientation with the current device
+/// orientation, otherwise a frame captured while the phone is rotated to
+/// landscape is treated as if it were still upright, which rotates the detected
+/// skeleton by 90 degrees and breaks pose detection. On iOS the camera plugin
+/// already delivers oriented frames, so the sensor orientation is used as-is.
+@visibleForTesting
+InputImageRotation? workoutInputImageRotation({
+  required int sensorOrientation,
+  required DeviceOrientation deviceOrientation,
+  required CameraLensDirection lensDirection,
+  required TargetPlatform platform,
+}) {
+  if (platform == TargetPlatform.iOS || platform == TargetPlatform.macOS) {
+    return InputImageRotationValue.fromRawValue(sensorOrientation);
+  }
+
+  final deviceRotation = _deviceOrientationDegrees[deviceOrientation];
+  if (deviceRotation == null) {
+    return null;
+  }
+
+  final int compensated;
+  if (lensDirection == CameraLensDirection.front) {
+    compensated = (sensorOrientation + deviceRotation) % 360;
+  } else {
+    compensated = (sensorOrientation - deviceRotation + 360) % 360;
+  }
+
+  return InputImageRotationValue.fromRawValue(compensated);
+}
+
+/// Decides which body side to track, with hysteresis so the choice does not
+/// flicker frame-to-frame when the two sides score almost equally (common for a
+/// side-view push-up, where the occluded far side carries noisy landmarks).
+///
+/// Returns `true` for the right side. Once a side is chosen it is kept until the
+/// other side's score exceeds it by [hysteresis] (a fraction of the current
+/// side's score).
+@visibleForTesting
+bool preferRightTrackingSide({
+  required double leftScore,
+  required double rightScore,
+  required bool? previousRight,
+  double hysteresis = 0.2,
+}) {
+  if (previousRight == null) {
+    return rightScore > leftScore;
+  }
+  if (previousRight) {
+    return !(leftScore > rightScore * (1 + hysteresis));
+  }
+  return rightScore > leftScore * (1 + hysteresis);
+}
+
 class _PoseDetectorViewState extends State<PoseDetectorView>
     with WidgetsBindingObserver {
   CameraController? _cameraController;
@@ -79,6 +143,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
   String? _lastDebugLine;
   Orientation? _lastViewOrientation;
   bool _isRestartingForOrientation = false;
+  bool? _trackingPrefersRight;
   late AppLocalizations _l10n;
 
   @override
@@ -184,7 +249,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
     final camera = _cameras![_cameraIndex];
     _cameraController = CameraController(
       camera,
-      ResolutionPreset.low,
+      ResolutionPreset.medium,
       enableAudio: false,
       imageFormatGroup: ImageFormatGroup.nv21,
     );
@@ -233,6 +298,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
     _workoutFrameProcessor.reset();
     _lastPoseSeenAtMs = null;
     _frameIndex = 0;
+    _trackingPrefersRight = null;
 
     await _startCamera();
   }
@@ -347,7 +413,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
     }
 
     final camera = _cameras![_cameraIndex];
-    final rotation = _getInputImageRotation(camera);
+    final rotation = _inputImageRotation(camera);
     if (rotation == null) {
       return null;
     }
@@ -372,19 +438,14 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
     );
   }
 
-  InputImageRotation? _getInputImageRotation(CameraDescription camera) {
-    switch (camera.sensorOrientation) {
-      case 0:
-        return InputImageRotation.rotation0deg;
-      case 90:
-        return InputImageRotation.rotation90deg;
-      case 180:
-        return InputImageRotation.rotation180deg;
-      case 270:
-        return InputImageRotation.rotation270deg;
-      default:
-        return InputImageRotation.rotation0deg;
-    }
+  InputImageRotation? _inputImageRotation(CameraDescription camera) {
+    return workoutInputImageRotation(
+      sensorOrientation: camera.sensorOrientation,
+      deviceOrientation: _cameraController?.value.deviceOrientation ??
+          DeviceOrientation.portraitUp,
+      lensDirection: camera.lensDirection,
+      platform: defaultTargetPlatform,
+    );
   }
 
   PoseFrame _buildPoseFrame(
@@ -719,7 +780,13 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
         ? PoseMetrics.horizontalDistance(rightShoulder, rightHip)
         : -1.0;
 
-    return rightScore > leftScore ? _Side.right : _Side.left;
+    final preferRight = preferRightTrackingSide(
+      leftScore: leftScore,
+      rightScore: rightScore,
+      previousRight: _trackingPrefersRight,
+    );
+    _trackingPrefersRight = preferRight;
+    return preferRight ? _Side.right : _Side.left;
   }
 
   Set<PoseLandmarkType> _highlightedLandmarksFor(ReadinessState state) {
@@ -865,7 +932,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
     final camera = _cameras![_cameraIndex];
     final previewSize = controller.value.previewSize!;
     final rotation =
-        _getInputImageRotation(camera) ?? InputImageRotation.rotation0deg;
+        _inputImageRotation(camera) ?? InputImageRotation.rotation0deg;
 
     final size = MediaQuery.of(context).size;
     final displaySize = workoutCameraPreviewDisplaySize(

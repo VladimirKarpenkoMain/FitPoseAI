@@ -88,23 +88,28 @@ class PoseMetrics {
     return total / count;
   }
 
+  /// Signed perpendicular distance from [point] to the line through
+  /// [lineStart]–[lineEnd], normalized by the line length.
+  ///
+  /// Computed via the 2D cross product so the magnitude is invariant to the
+  /// orientation of the body in the frame (works the same for a vertical
+  /// standing torso and a horizontal push-up/plank). The sign keeps the legacy
+  /// convention: for a left-to-right reference line a point below it (larger y)
+  /// yields a positive value.
   static double normalizedOffsetFromLine({
     required FrameLandmark lineStart,
     required FrameLandmark point,
     required FrameLandmark lineEnd,
   }) {
-    final lineLength = distance(lineStart, lineEnd);
-    if (lineLength == 0) {
+    final lineDeltaX = lineEnd.x - lineStart.x;
+    final lineDeltaY = lineEnd.y - lineStart.y;
+    final lengthSquared = lineDeltaX * lineDeltaX + lineDeltaY * lineDeltaY;
+    if (lengthSquared == 0) {
       return 0;
     }
 
-    final lineDeltaX = lineEnd.x - lineStart.x;
-    if (lineDeltaX.abs() < 0.0001) {
-      return (point.y - ((lineStart.y + lineEnd.y) / 2)) / lineLength;
-    }
-
-    final progress = (point.x - lineStart.x) / lineDeltaX;
-    final lineY = lineStart.y + (lineEnd.y - lineStart.y) * progress;
-    return (point.y - lineY) / lineLength;
+    final cross = lineDeltaX * (point.y - lineStart.y) -
+        lineDeltaY * (point.x - lineStart.x);
+    return cross / lengthSquared;
   }
 }

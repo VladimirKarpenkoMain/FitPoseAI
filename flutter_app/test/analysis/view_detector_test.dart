@@ -54,6 +54,25 @@ void main() {
     expect(result.confidence, greaterThan(0.7));
   });
 
+  test('view detector recognizes a horizontal (landscape) side-view body', () {
+    // Same narrow side-view torso as above, but rotated 90 degrees so the body
+    // lies horizontally in the frame (push-up filmed in landscape). The torso
+    // now spans the X axis, so a vertical-only height measure collapses to ~0.
+    const frame = PoseFrame(
+      landmarks: {
+        Joint.leftShoulder: FrameLandmark(x: 220, y: 120, confidence: 0.99),
+        Joint.rightShoulder: FrameLandmark(x: 222, y: 132, confidence: 0.98),
+        Joint.leftHip: FrameLandmark(x: 100, y: 123, confidence: 0.99),
+        Joint.rightHip: FrameLandmark(x: 102, y: 134, confidence: 0.97),
+      },
+    );
+
+    final result = const ViewDetector().detect(frame);
+
+    expect(result.view, ExerciseView.side);
+    expect(result.confidence, greaterThan(0.7));
+  });
+
   test('view detector returns unknown for transition between front and side',
       () {
     const frame = PoseFrame(
