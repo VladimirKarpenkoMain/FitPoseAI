@@ -11,6 +11,7 @@ import '../../analysis/pose_frame.dart';
 import '../../analysis/pose_metrics.dart';
 import '../../analysis/readiness_evaluator.dart';
 import '../../analysis/readiness_requirements.dart';
+import '../../analysis/shoulder_press_metrics.dart';
 import '../../analysis/workout_analyzer.dart';
 import '../../analysis/workout_frame_processor.dart';
 import '../../l10n/app_localizations.dart';
@@ -601,148 +602,7 @@ class _PoseDetectorViewState extends State<PoseDetectorView>
         }
         break;
       case ExerciseType.shoulderPress:
-        final side = _selectSide(landmarks);
-        final shoulder = side == _Side.left
-            ? landmarks[Joint.leftShoulder]
-            : landmarks[Joint.rightShoulder];
-        final wrist = side == _Side.left
-            ? landmarks[Joint.leftWrist]
-            : landmarks[Joint.rightWrist];
-        final hip = side == _Side.left
-            ? landmarks[Joint.leftHip]
-            : landmarks[Joint.rightHip];
-        final knee = side == _Side.left
-            ? landmarks[Joint.leftKnee]
-            : landmarks[Joint.rightKnee];
-        final ankle = side == _Side.left
-            ? landmarks[Joint.leftAnkle]
-            : landmarks[Joint.rightAnkle];
-        final leftHip = landmarks[Joint.leftHip];
-        final leftShoulder = landmarks[Joint.leftShoulder];
-        final leftElbow = landmarks[Joint.leftElbow];
-        final leftWrist = landmarks[Joint.leftWrist];
-        final leftAnkle = landmarks[Joint.leftAnkle];
-        final rightHip = landmarks[Joint.rightHip];
-        final rightShoulder = landmarks[Joint.rightShoulder];
-        final rightElbow = landmarks[Joint.rightElbow];
-        final rightWrist = landmarks[Joint.rightWrist];
-
-        final shoulderAngles = <double>[];
-        final elbowAngles = <double>[];
-        if (leftHip != null &&
-            leftShoulder != null &&
-            leftElbow != null &&
-            leftWrist != null) {
-          final leftShoulderAngle =
-              PoseMetrics.safeAngle(leftHip, leftShoulder, leftElbow);
-          final leftElbowAngle =
-              PoseMetrics.safeAngle(leftShoulder, leftElbow, leftWrist);
-          shoulderAngles.add(leftShoulderAngle);
-          elbowAngles.add(leftElbowAngle);
-          metrics['phase_left_shoulder_angle'] = leftShoulderAngle;
-          metrics['phase_left_elbow_angle'] = leftElbowAngle;
-        }
-        if (rightHip != null &&
-            rightShoulder != null &&
-            rightElbow != null &&
-            rightWrist != null) {
-          final rightShoulderAngle =
-              PoseMetrics.safeAngle(rightHip, rightShoulder, rightElbow);
-          final rightElbowAngle =
-              PoseMetrics.safeAngle(rightShoulder, rightElbow, rightWrist);
-          shoulderAngles.add(rightShoulderAngle);
-          elbowAngles.add(rightElbowAngle);
-          metrics['phase_right_shoulder_angle'] = rightShoulderAngle;
-          metrics['phase_right_elbow_angle'] = rightElbowAngle;
-        }
-        if (shoulderAngles.isNotEmpty) {
-          metrics['phase_shoulder_angle'] =
-              shoulderAngles.reduce((left, right) => left + right) /
-                  shoulderAngles.length;
-        }
-        if (elbowAngles.isNotEmpty) {
-          metrics['phase_elbow_angle'] =
-              elbowAngles.reduce((left, right) => left + right) /
-                  elbowAngles.length;
-        }
-        if (shoulderAngles.length == 2 && elbowAngles.length == 2) {
-          final shoulderGap = (shoulderAngles[0] - shoulderAngles[1]).abs();
-          final elbowGap = (elbowAngles[0] - elbowAngles[1]).abs();
-          metrics['phase_left_right_symmetry'] =
-              shoulderGap > elbowGap ? shoulderGap : elbowGap;
-          metrics['phase_bilateral_arm_metrics'] = 1;
-        }
-        if (shoulder != null && hip != null) {
-          metrics['phase_torso_angle_from_vertical'] =
-              PoseMetrics.verticalTilt(shoulder, hip);
-        }
-        if (hip != null && knee != null && ankle != null) {
-          metrics['phase_knee_angle'] = PoseMetrics.safeAngle(hip, knee, ankle);
-        }
-        if (shoulder != null && wrist != null) {
-          final bodyReference = hip != null && ankle != null
-              ? PoseMetrics.distance(shoulder, ankle)
-              : PoseMetrics.distance(shoulder, wrist);
-          if (bodyReference > 0) {
-            metrics['phase_hand_forward_offset'] =
-                PoseMetrics.horizontalDistance(wrist, shoulder) / bodyReference;
-          }
-        }
-        if (shoulder != null && hip != null && wrist != null && ankle != null) {
-          final bodyReference = PoseMetrics.distance(shoulder, ankle);
-          if (bodyReference > 0) {
-            final shoulderStackOffset =
-                PoseMetrics.horizontalDistance(wrist, shoulder);
-            final footStackOffset =
-                PoseMetrics.horizontalDistance(wrist, ankle);
-            metrics['phase_vertical_stack_offset'] =
-                (shoulderStackOffset + footStackOffset) / (2 * bodyReference);
-          }
-        }
-        if (leftShoulder != null &&
-            leftWrist != null &&
-            rightShoulder != null &&
-            rightWrist != null) {
-          metrics['phase_wrist_above_shoulder'] =
-              leftWrist.y < leftShoulder.y && rightWrist.y < rightShoulder.y
-                  ? 1
-                  : 0;
-          final bodyReference = leftHip != null && leftAnkle != null
-              ? PoseMetrics.distance(leftShoulder, leftAnkle)
-              : PoseMetrics.horizontalDistance(leftShoulder, rightShoulder);
-          if (bodyReference > 0) {
-            metrics['phase_wrist_height_asymmetry'] =
-                PoseMetrics.verticalDistance(leftWrist, rightWrist) /
-                    bodyReference;
-          }
-        } else if (shoulder != null && wrist != null) {
-          metrics['phase_wrist_above_shoulder'] = wrist.y < shoulder.y ? 1 : 0;
-        }
-        if (leftShoulder != null &&
-            rightShoulder != null &&
-            leftElbow != null &&
-            rightElbow != null) {
-          final shoulderWidth =
-              PoseMetrics.horizontalDistance(leftShoulder, rightShoulder);
-          if (shoulderWidth > 0) {
-            metrics['phase_elbow_width_ratio'] =
-                PoseMetrics.horizontalDistance(leftElbow, rightElbow) /
-                    shoulderWidth;
-          }
-        }
-        final shoulderAngle = metrics['phase_shoulder_angle'] ?? 0;
-        final elbowAngle = metrics['phase_elbow_angle'] ?? 180;
-        final torsoAngle = metrics['phase_torso_angle_from_vertical'] ?? 0;
-        final handForwardOffset = metrics['phase_hand_forward_offset'] ?? 0;
-        metrics['start_pose_valid'] = shoulderAngle >= 20 &&
-                shoulderAngle <= 105 &&
-                elbowAngle >= 60 &&
-                elbowAngle <= 120 &&
-                torsoAngle <= 18 &&
-                handForwardOffset <= 0.35
-            ? 1
-            : 0;
-        metrics['selected_side_right'] = side == _Side.right ? 1 : 0;
+        metrics.addAll(buildShoulderPressMetrics(landmarks));
         break;
       case ExerciseType.jumpingJack:
         final leftHip = landmarks[Joint.leftHip];
